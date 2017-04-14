@@ -52,6 +52,9 @@ The geometry is created using the sketcher in FreeCAD
 The mesh and mesh groups are genereated with the mesh module of salome
 
 <img src="refs/Salome.png" width="800" title="salome">
+
+Before exporting the mesh, it's advisable to merge nodes below a tolerance 
+to correct some possible numerical errors in the geometry.
     
 ## Solving
 ### Calculix

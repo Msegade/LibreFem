@@ -1,67 +1,119 @@
+# First mandatory command
+# -----------------------------------
 
-DEBUT()
+DEBUT();
 
-MESH=LIRE_MAILLAGE( FORMAT='MED' )
+# Read mesh
+# ------------------
+# Read mesh in the med file and name the resulting concept 'mail'
 
-MESH=DEFI_GROUP(
-        reuse=MESH,
-        MAILLAGE=MESH,
+mail=LIRE_MAILLAGE( FORMAT='MED' );
+
+# Create a group with all elements
+# ------------------
+
+mail=DEFI_GROUP(
+        reuse=mail,
+        MAILLAGE=mail,
         CREA_GROUP_MA=_F(NOM='TOUT', TOUT='OUI',));
 
-MO1=AFFE_MODELE( MAILLAGE=MESH,
+# Definition of the model
+# --------------------
+# - A model is a concept which contains the types of finite elements used in 
+#   the analysis
+# - Assings to all the elements a mechanic finite element with 'BARRE' elements
+
+
+modl=AFFE_MODELE( MAILLAGE=mail,
                  AFFE=_F( TOUT = 'OUI',PHENOMENE = 'MECANIQUE',
                                        MODELISATION = 'BARRE') );
 
-ACIER=DEFI_MATERIAU(ELAS=_F( E = 200E+9,NU = 0.3,RHO = 7800) );
+# Material definition
+# ----------------------
+# Characteristics of the material
+#   - Young Modulus
+#   - Poisson Coefficient
 
-CHMAT=AFFE_MATERIAU(MAILLAGE=MESH, AFFE=_F( TOUT = 'OUI',MATER = ACIER))
-CAREL1=AFFE_CARA_ELEM( MODELE=MO1,
+acier=DEFI_MATERIAU(ELAS=_F( E = 200E+9,NU = 0.3,) );
+
+# Assignment of the material on the mesh
+# ---------------------------------------
+# All the mesh has the same material. It could be different materials for different
+# mesh groups
+
+chmat=AFFE_MATERIAU(MAILLAGE=mail, AFFE=_F( TOUT = 'OUI',MATER = acier))
+
+# Section Assigment
+# -------------------------------------
+# Assing a circular section of radius 0.005 to the whole mesh
+
+sect=AFFE_CARA_ELEM( MODELE=modl,
                   BARRE=(_F( GROUP_MA = 'TOUT', 
                             SECTION  = 'CERCLE',
                                 CARA = 'R', VALE = 0.005),));
                                 
+# Boundary conditions
+# -------------------------------------
+# The boundary conditions can be applied into nodes, node groups  elements 
+# or element groups
 
-CH111=AFFE_CHAR_MECA( MODELE=MO1,DDL_IMPO=(
+clim=AFFE_CHAR_MECA( MODELE=modl,DDL_IMPO=(
                    _F( TOUT = 'OUI',    DZ = 0., ),
                    _F( GROUP_NO = ('Fix'),   DX = 0., DY = 0.),
                    _F( GROUP_NO = ('Roller'),         DY = 0.)) );
 
 
-CH121=AFFE_CHAR_MECA( MODELE=MO1,
+# Loads definition
+# -------------------------
+# Point load on the middle node
+
+charg=AFFE_CHAR_MECA( MODELE=modl,
           FORCE_NODALE=_F( GROUP_NO = ('Load'),  FY = -10000),);
 
-MEST11=MECA_STATIQUE(        MODELE=MO1,     CHAM_MATER=CHMAT,
-            CARA_ELEM=CAREL1,EXCIT=( _F( CHARGE = CH111),_F( CHARGE = CH121)));
+# Resolution
+# ----------
+# Global command for the resolution of linear static problems and thermo-elastic 
+# with the field of materials defined
+# and the loads and boundary conditions
 
-MEST11=CALC_CHAMP(reuse=MEST11,
+res1=MECA_STATIQUE(        MODELE=modl,     CHAM_MATER=chmat,
+            CARA_ELEM=sect,EXCIT=( _F( CHARGE = charg),_F( CHARGE = clim)));
+
+# Calculations of derived fields
+# ----------------------
+# REAC_NODA = reaction forces
+# SIEF_ELNO = internal forces
+
+
+res1=CALC_CHAMP(reuse=res1,
                   FORCE=('REAC_NODA',),
-                  RESULTAT=MEST11);
+                  RESULTAT=res1);
 
-MEST11=CALC_CHAMP(reuse=MEST11,
+res1=CALC_CHAMP(reuse=res1,
                   CONTRAINTE=('SIEF_ELNO',),
-                  RESULTAT=MEST11);
+                  RESULTAT=res1);
 
 
 IMPR_RESU(FORMAT='RESULTAT',
-          RESU=_F(RESULTAT=MEST11,
+          RESU=_F(RESULTAT=res1,
                   NOM_CHAM='DEPL',
                   GROUP_NO='Load',),);
 
 IMPR_RESU(FORMAT='RESULTAT',
-          RESU=_F(RESULTAT=MEST11,
+          RESU=_F(RESULTAT=res1,
                   NOM_CHAM='REAC_NODA',
                   GROUP_NO=('Fix','Roller')),);
 
 IMPR_RESU(FORMAT='RESULTAT',
-          RESU=_F(RESULTAT=MEST11,
+          RESU=_F(RESULTAT=res1,
                   NOM_CHAM='SIEF_ELNO',
                   NOM_CMP='N',
                   GROUP_MA='TOUT'),);
 
 IMPR_RESU(FORMAT='MED',
           UNITE = 80,
-          RESU=_F(RESULTAT=MEST11,
+          RESU=_F(RESULTAT=res1,
                   NOM_CHAM=('DEPL','SIEF_ELNO'  ),));
 
 
-FIN()
+FIN();
