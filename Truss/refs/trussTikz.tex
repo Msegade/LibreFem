@@ -1,0 +1,33 @@
+\documentclass[convert={density=300,size=1080x800,outext=.png}]{standalone}
+\usepackage{stanli}
+\usepackage{siunitx}
+\begin{document}
+\begin{tikzpicture}
+
+  \scaling{3}
+   % Height of the truss
+  \pgfmathsetlengthmacro{\height}{sin(acos(1/2))*1cm}
+  \point{1}{0}{0};
+  \point{2}{1}{0};
+  \point{3}{2}{0};
+  \point{4}{0.5}{\height};
+  \point{5}{1.5}{\height};
+
+  \beam{2}{1}{2}[1][1];
+  \beam{2}{2}{3}[1][1];
+  \beam{2}{1}{4}[1][1];
+  \beam{2}{4}{5}[1][1];
+  \beam{2}{4}{2}[1][1];
+  \beam{2}{2}{5}[1][1];
+  \beam{2}{5}{3}[1][1];
+
+  \support{1}{1};
+  \support{7}{3};
+
+  \load{1}{2}[90][1][-1.1];
+
+  \dimensioning{1}{4}{5}{3}[$L$];
+
+  \notation{1}{2}{$P$}[below=1cm, right];
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,67 @@
+
+DEBUT()
+
+MESH=LIRE_MAILLAGE( FORMAT='MED' )
+
+MESH=DEFI_GROUP(
+        reuse=MESH,
+        MAILLAGE=MESH,
+        CREA_GROUP_MA=_F(NOM='TOUT', TOUT='OUI',));
+
+MO1=AFFE_MODELE( MAILLAGE=MESH,
+                 AFFE=_F( TOUT = 'OUI',PHENOMENE = 'MECANIQUE',
+                                       MODELISATION = 'BARRE') );
+
+ACIER=DEFI_MATERIAU(ELAS=_F( E = 200E+9,NU = 0.3,RHO = 7800) );
+
+CHMAT=AFFE_MATERIAU(MAILLAGE=MESH, AFFE=_F( TOUT = 'OUI',MATER = ACIER))
+CAREL1=AFFE_CARA_ELEM( MODELE=MO1,
+                  BARRE=(_F( GROUP_MA = 'TOUT', 
+                            SECTION  = 'CERCLE',
+                                CARA = 'R', VALE = 0.005),));
+                                
+
+CH111=AFFE_CHAR_MECA( MODELE=MO1,DDL_IMPO=(
+                   _F( TOUT = 'OUI',    DZ = 0., ),
+                   _F( GROUP_NO = ('Fix'),   DX = 0., DY = 0.),
+                   _F( GROUP_NO = ('Roller'),         DY = 0.)) );
+
+
+CH121=AFFE_CHAR_MECA( MODELE=MO1,
+          FORCE_NODALE=_F( GROUP_NO = ('Load'),  FY = -10000),);
+
+MEST11=MECA_STATIQUE(        MODELE=MO1,     CHAM_MATER=CHMAT,
+            CARA_ELEM=CAREL1,EXCIT=( _F( CHARGE = CH111),_F( CHARGE = CH121)));
+
+MEST11=CALC_CHAMP(reuse=MEST11,
+                  FORCE=('REAC_NODA',),
+                  RESULTAT=MEST11);
+
+MEST11=CALC_CHAMP(reuse=MEST11,
+                  CONTRAINTE=('SIEF_ELNO',),
+                  RESULTAT=MEST11);
+
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(RESULTAT=MEST11,
+                  NOM_CHAM='DEPL',
+                  GROUP_NO='Load',),);
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(RESULTAT=MEST11,
+                  NOM_CHAM='REAC_NODA',
+                  GROUP_NO=('Fix','Roller')),);
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(RESULTAT=MEST11,
+                  NOM_CHAM='SIEF_ELNO',
+                  NOM_CMP='N',
+                  GROUP_MA='TOUT'),);
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 80,
+          RESU=_F(RESULTAT=MEST11,
+                  NOM_CHAM=('DEPL','SIEF_ELNO'  ),));
+
+
+FIN()
