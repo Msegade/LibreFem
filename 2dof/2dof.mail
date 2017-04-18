@@ -1,0 +1,33 @@
+TITRE
+% 2GDL
+FINSF
+COOR_3D             % 3 NOEUDS
+%  NOEUD      X         Y          Z
+    RP1     0.          2.        0.
+    RP2     0.          1.        0.
+    RP3     0.          0.        0.
+%
+FINSF
+
+SEG2
+   K1    RP1   RP3
+   K2    RP1   RP2
+FINSF
+
+%GROUP_NO
+%    MASSES  RP1  RP2
+%FINSF   
+POI1
+    M1  RP1  
+    M2  RP2
+FINSF   
+
+GROUP_MA
+    MASSES M1 M2
+FINSF
+
+GROUP_MA
+    SPRINGS K1  K2
+FINSF   
+
+FIN

@@ -1,0 +1,32 @@
+P actions make_etude
+P consbtc oui
+P soumbtc oui
+P version stable 
+P lang en
+P debug nodebug
+P mode interactif
+P ncpus 1
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P classe 
+P depart 
+P after_job 
+P distrib 
+P exectool 
+P multiple 
+P nomjob New
+A args 
+A memjeveux 64.0
+A tpmax 900
+P memjob 524288
+P tpsjob 15
+P nbmaxnook 5
+P cpresok RESNOOK
+P only_nook 
+P facmtps 1
+P corefilesize unlimited
+F comm ./2dof.comm D 1
+F mail ./2dof.mail D 20
+F mess ./2dof.mess R 6
+F resu ./2dof.resu R 8
+F csv  ./2dof.csv R 31

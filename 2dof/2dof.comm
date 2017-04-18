@@ -1,0 +1,163 @@
+DEBUT()
+
+MA=LIRE_MAILLAGE( )
+
+# Discret elements
+MO=AFFE_MODELE(  MAILLAGE=MA,AFFE=(
+       _F( GROUP_MA = 'SPRINGS',    PHENOMENE = 'MECANIQUE',  MODELISATION = 'DIS_T',),
+       _F( GROUP_MA = 'MASSES',     PHENOMENE = 'MECANIQUE',  MODELISATION = 'DIS_T',),
+));
+
+# Boundary conditions
+CONLIM=AFFE_CHAR_MECA(  MODELE=MO,
+      DDL_IMPO=(_F(  TOUT = 'OUI',   DX = 0, DZ = 0.,     ),
+                _F(  NOEUD ='RP3',   DY = 0              ),)    
+);
+
+# Problem parameters
+m1 = 0.370
+m2 = 0.100
+m  = 5
+k1 = 300
+k2 = 100
+omega = 1000
+e = 0.20
+
+# Mechanical charactersitics of the discret elements
+CARELEM=AFFE_CARA_ELEM(   MODELE=MO,
+                          DISCRET=(
+         _F(  CARA = 'M_T_D_N',   MAILLE = 'M1',         VALE = (m1,  ), ),
+         _F(  CARA = 'M_T_D_N',   MAILLE = 'M2',         VALE = (m2,  ), ),
+         _F(  CARA = 'K_T_D_N',   GROUP_MA = 'MASSES',   VALE = (0,    0,  0.,  ), ),
+         _F(  CARA = 'K_T_D_L',   MAILLE = 'K1',         VALE = (0, 2*k1,  0.,  ), ),
+         _F(  CARA = 'K_T_D_L',   MAILLE = 'K2',         VALE = (0,   k2,  0.,  ), ),
+),);
+
+# Combine the following commands
+# CALC_MATR_ELEM  ->  Rigi_meca: stiffness of the elements of the model
+#                 ->  Mass_meca: mass elements of the model
+# NUME_DDL        ->  Numerate the system of equations and the method to solve it
+# ASSE_MATRICE    ->  Assemble the elementary matrices
+# CALC_VECT_ELEM  ->  Calc elementary vectors
+# ASSE_VECT       ->  Assemble elementary vectors
+#
+# The CO keyword is used to name the resulting concepts produced by the macro command
+
+ASSEMBLAGE(  MODELE=MO,
+             CHARGE=CONLIM,      
+             CARA_ELEM=CARELEM,
+             NUME_DDL=CO("NUMEDDL"),
+             MATR_ASSE=(
+                     _F(  MATRICE = CO("RIGIDITE"),  OPTION = 'RIGI_MECA'),
+                     _F(  MATRICE = CO("MASSE"),     OPTION = 'MASS_MECA')),
+             #VECT_ASSE=(
+             #        _F(  VECTEUR = CO("VECTAS"),    OPTION = 'CHAR_MECA'),)
+);
+
+# Compute the natural frequencies of the modal problem
+# Plus_petite: the smalles frequencies
+MODE_MEC=CALC_MODES( OPTION='PLUS_PETITE',
+                    CALC_FREQ=_F(NMAX_FREQ=2,),
+                    MATR_RIGI=RIGIDITE,
+                    MATR_MASS=MASSE,
+                    );
+
+# Normalize the eigenmodes accordin to NORME=
+# TRAN: in displacements
+MODE_MEC=NORM_MODE(reuse =MODE_MEC,
+                   MODE=MODE_MEC,
+                   #NORME='MASS_GENE',);
+                   NORME='TRAN',);
+
+# Etract the first 2 modes of the structure
+MODE_EXT=EXTR_MODE(FILTRE_MODE=_F(MODE=MODE_MEC,
+                                  NUME_MODE=(1,2),),
+                   IMPRESSION=_F(CUMUL='OUI',),);
+
+
+# Print results
+IMPR_RESU(RESU=_F(RESULTAT=MODE_MEC,),);
+
+#------------------------------------------------------------------------------
+# CALCULO TRANSITORIO
+#------------------------------------------------------------------------------
+
+# Load
+import math
+omegaRad = omega*2*math.pi/(60) 
+F = m*omegaRad**2*e
+
+# Load definition
+LOAD=AFFE_CHAR_MECA(      MODELE=MO,
+                          FORCE_NODALE=_F(  NOEUD = 'RP1',  FY = F)  )
+
+# Load function, acting during 1 second
+LFUNCT=DEFI_FONCTION(   NOM_PARA='INST',   NOM_RESU='ALPHA',
+                           VALE=( 0., 1.,  1., 1.,  1.0000001, 0., ),
+                           PROL_DROITE='CONSTANT'               )
+
+# Calc and Assembly of the load vector with the load
+VECTLOAD=CALC_VECT_ELEM(  CHARGE=LOAD,  OPTION='CHAR_MECA',
+                          CARA_ELEM=CARELEM                  )
+VECTAS=ASSE_VECTEUR(  VECT_ELEM=VECTLOAD,  NUME_DDL=NUMEDDL  )
+
+
+# Project the matrices and vectors into a modal base
+PROJ_BASE(BASE=MODE_EXT,
+          STOCKAGE='DIAG',
+          MATR_ASSE_GENE=(_F(MATRICE=CO('MASS_GEN'),
+                             MATR_ASSE=MASSE,),
+                          _F(MATRICE=CO('RIGI_GEN'),
+                             MATR_ASSE=RIGIDITE,),),
+          VECT_ASSE_GENE=_F(VECTEUR=CO('VECT_GEN'),
+                            VECT_ASSE=VECTAS,),);
+
+# U4.53.21 DYNA_TRAN_MODAL
+# Response by modal superposition
+TRAN_GEN=DYNA_VIBRA(TYPE_CALCUL='TRAN',BASE_CALCUL='GENE',
+                         SCHEMA_TEMPS=_F(SCHEMA='NEWMARK',),
+                         MATR_MASS=MASS_GEN,
+                         MATR_RIGI=RIGI_GEN,
+                         AMOR_MODAL=_F(AMOR_REDUIT=(0.05,0.05)),
+                         INCREMENT=_F(INST_INIT=0.,
+                                      INST_FIN=3,
+                                      PAS=0.001,),
+                         EXCIT=_F(VECT_ASSE_GENE=VECT_GEN,
+                                  FONC_MULT=LFUNCT,),);
+
+# Back to physical coordinates
+REPHYS = REST_GENE_PHYS (RESU_GENE= TRAN_GEN , NOM_CHAM=('ACCE','DEPL')); 
+
+# Response function
+RESPO = RECU_FONCTION (
+        RESULTAT = REPHYS,
+        TOUT_INST = 'OUI',
+        NOM_CHAM = 'DEPL',
+        NOM_CMP = 'DY',
+        NOEUD = 'RP1',
+);
+
+#IMPR_FONCTION(
+#    FORMAT='XMGRACE',
+#    UNITE=31,
+#    COURBE=(
+#        _F(
+#            FONCTION=RESPO,
+#            LEGENDE='DY, modulus',
+#        )),
+#    TITRE='RP1, displacement',
+#    LEGENDE_X='Time',
+#    LEGENDE_Y='Displacement',
+#);
+IMPR_FONCTION(
+    FORMAT='TABLEAU',
+    UNITE=31,
+    SEPARATEUR=',',
+    COURBE=(
+        _F(
+            FONCTION=RESPO,
+        )),
+);
+
+FIN();
+#
