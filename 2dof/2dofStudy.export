@@ -30,3 +30,5 @@ F mail ./2dof.mail D 20
 F mess ./2dof.mess R 6
 F resu ./2dof.resu R 8
 F csv  ./2dof.csv R 31
+F csv  ./mass.csv R 32
+F csv  ./stiffness.csv R 33

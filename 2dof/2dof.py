@@ -1,4 +1,3 @@
-
 import numpy as np
 import scipy.linalg as lg
 
@@ -23,7 +22,7 @@ phi = res[1]
 w1 = np.sqrt(vecw[0]).real
 w2 = np.sqrt(vecw[1]).real
 
-print("Frecuencias = ", w1, "rad/s ",  w2, "rad/s ")
+print("Frequencies = ", w1, "rad/s ",  w2, "rad/s ")
 print("            = ", w1/(2*np.pi), "Hzs",  w2/(2*np.pi), "Hzs")
 
 Kg = np.dot(np.dot(phi.T, K), phi)
@@ -36,4 +35,11 @@ phiM[:,1] = phiM[:,1]/np.sqrt(Mg[1,1])
 
 Km = np.dot(np.dot(phiM.T, K), phiM)
 Mm = np.dot(np.dot(phiM.T, M), phiM)
+
+
+print("Normalized by mass matrices")
+print("K = ")
+print(Km)
+print("M = ")
+print(Mm)
 

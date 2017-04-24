@@ -1,4 +1,5 @@
-DEBUT()
+# Execution Command by command for printing matrices
+DEBUT(PAR_LOT='NON')
 
 MA=LIRE_MAILLAGE( )
 
@@ -17,7 +18,7 @@ CONLIM=AFFE_CHAR_MECA(  MODELE=MO,
 # Problem parameters
 m1 = 0.370
 m2 = 0.100
-m  = 5
+m  = 0.005
 k1 = 300
 k2 = 100
 omega = 1000
@@ -64,15 +65,36 @@ MODE_MEC=CALC_MODES( OPTION='PLUS_PETITE',
 
 # Normalize the eigenmodes accordin to NORME=
 # TRAN: in displacements
+# MASS_GENE: mass
 MODE_MEC=NORM_MODE(reuse =MODE_MEC,
                    MODE=MODE_MEC,
-                   #NORME='MASS_GENE',);
-                   NORME='TRAN',);
+                   NORME='MASS_GENE',);
+                   #NORME='TRAN',);
 
 # Etract the first 2 modes of the structure
 MODE_EXT=EXTR_MODE(FILTRE_MODE=_F(MODE=MODE_MEC,
                                   NUME_MODE=(1,2),),
                    IMPRESSION=_F(CUMUL='OUI',),);
+
+
+# Project the matrices and vectors into a modal base
+PROJ_BASE(BASE=MODE_EXT,
+          STOCKAGE='DIAG',
+          MATR_ASSE_GENE=(_F(MATRICE=CO('MASS_GEN'),
+                             MATR_ASSE=MASSE,),
+                          _F(MATRICE=CO('RIGI_GEN'),
+                             MATR_ASSE=RIGIDITE,),),
+        );
+
+
+# Print normalized matrices
+###############################################################################
+import numpy as np
+mass = MASS_GEN.EXTR_MATR_GENE()
+stiffness = RIGI_GEN.EXTR_MATR_GENE()
+np.savetxt('fort.32', mass, delimiter='\t')
+np.savetxt('fort.33', stiffness, delimiter='\t')
+###############################################################################
 
 
 # Print results
@@ -83,9 +105,11 @@ IMPR_RESU(RESU=_F(RESULTAT=MODE_MEC,),);
 #------------------------------------------------------------------------------
 
 # Load
+###############################################################################
 import math
 omegaRad = omega*2*math.pi/(60) 
 F = m*omegaRad**2*e
+###############################################################################
 
 # Load definition
 LOAD=AFFE_CHAR_MECA(      MODELE=MO,
@@ -102,15 +126,13 @@ VECTLOAD=CALC_VECT_ELEM(  CHARGE=LOAD,  OPTION='CHAR_MECA',
 VECTAS=ASSE_VECTEUR(  VECT_ELEM=VECTLOAD,  NUME_DDL=NUMEDDL  )
 
 
-# Project the matrices and vectors into a modal base
+# Project the load vector into the modal base
 PROJ_BASE(BASE=MODE_EXT,
           STOCKAGE='DIAG',
-          MATR_ASSE_GENE=(_F(MATRICE=CO('MASS_GEN'),
-                             MATR_ASSE=MASSE,),
-                          _F(MATRICE=CO('RIGI_GEN'),
-                             MATR_ASSE=RIGIDITE,),),
           VECT_ASSE_GENE=_F(VECTEUR=CO('VECT_GEN'),
-                            VECT_ASSE=VECTAS,),);
+                            VECT_ASSE=VECTAS,),
+          );
+
 
 # U4.53.21 DYNA_TRAN_MODAL
 # Response by modal superposition
@@ -158,6 +180,7 @@ IMPR_FONCTION(
             FONCTION=RESPO,
         )),
 );
+
 
 FIN();
 #
