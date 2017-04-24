@@ -1,0 +1,95 @@
+# First mandatory command
+# -----------------------------------
+
+
+DEBUT();
+
+# Read mesh
+# ------------------
+# Read mesh in the mesh file and name the resulting concept 'mail'
+
+mail = LIRE_MAILLAGE  ( FORMAT='MED') ;
+
+# Definition of the model
+# --------------------
+# - A model is a concept which contains the types of finite elements used in 
+#   the analysis
+# - Assings to all the elements a mechanic, axisymetric finite element
+
+
+modl=AFFE_MODELE(MAILLAGE=mail,
+                AFFE=_F(TOUT='OUI',
+                        PHENOMENE='MECANIQUE',
+                        MODELISATION='3D',),);
+
+
+# Material definition
+# ----------------------
+# Characteristics of the material
+#   - Young Modulus
+#   - Poisson Coefficient
+
+acier=DEFI_MATERIAU(ELAS=_F(E=209e3,
+                            NU=0.3,),);
+
+# Assignment of the material on the mesh
+# ---------------------------------------
+# All the mesh has the same material. It could be different materials for different
+# mesh groups
+
+chmat=AFFE_MATERIAU(MAILLAGE=mail,
+                    AFFE=_F(TOUT='OUI',
+                            MATER=acier,),);
+
+# Boundary conditions
+# -------------------------------------
+# The boundary conditions can be applied into nodes, node groups  elements 
+# or element groups
+
+clim=AFFE_CHAR_MECA(MODELE=modl,
+                FACE_IMPO=_F(GROUP_MA='Fix',
+                            DX=0, DY=0, DZ=0,
+                ),);
+
+
+# Load Assingment
+# -------------------------
+# Assing the pressure in the boundary of the element group Load
+
+charg=AFFE_CHAR_MECA(MODELE=modl,
+           PRES_REP=_F(GROUP_MA=('Load',), PRES=0.5,)
+            ,);
+
+# Resolution
+# ----------
+# Global command for the resolution of linear static problems and thermo-elastic 
+# with the field of materials defined
+# and the loads and boundary conditions
+
+res1=MECA_STATIQUE(
+                   MODELE=modl,
+                   CHAM_MATER=chmat,
+                   EXCIT=(_F(CHARGE=charg,),
+                        _F(CHARGE=clim,),),);
+
+# Calculations of stresses
+# ----------------------
+# reuse=res1 means that we enhance the concept res1: The field of stresses will 
+# be saved with the field of displacements
+# The name 'SIGM_ELNO' means "calculated stresses at each element node starting 
+# with the displacements
+
+res1=CALC_CHAMP(reuse=res1,RESULTAT=res1,
+                CONTRAINTE=('SIGM_ELNO'),
+                CRITERES=('SIEQ_ELNO'));
+
+# Print the results for visualization with SALOME (Paravis)
+
+IMPR_RESU(FORMAT='MED',
+          RESU=_F(RESULTAT=res1,),);
+
+
+# Mandatory command to end execution
+# ---------------------------------------------
+
+FIN();
