@@ -1,0 +1,107 @@
+DEBUT();
+
+# Read mesh
+# ------------------
+
+mail=LIRE_MAILLAGE( FORMAT='MED' );
+
+# Create a group with all elements
+# ------------------
+
+mail=DEFI_GROUP(
+        reuse=mail,
+        MAILLAGE=mail,
+        CREA_GROUP_MA=_F(NOM='TOUT', TOUT='OUI',));
+
+# Definition of the model
+# --------------------
+
+
+modl=AFFE_MODELE( MAILLAGE=mail,
+                 AFFE=_F( TOUT = 'OUI',PHENOMENE = 'MECANIQUE',
+                                       MODELISATION = 'COQUE_3D') );
+
+# Material definition
+# ----------------------
+
+al2024t4=DEFI_MATERIAU(ELAS=_F( E = 73e6,NU = 0.33,) );
+
+# Assignment of the material on the mesh
+# ---------------------------------------
+
+chmat=AFFE_MATERIAU(MAILLAGE=mail, AFFE=_F( TOUT = 'OUI',MATER = al2024t4))
+
+# Section Assigment
+# -------------------------------------
+# Assing a circular section of radius 0.005 to the whole mesh
+
+sect=AFFE_CARA_ELEM( MODELE=modl,
+                  BARRE=(_F( GROUP_MA = 'TOUT', 
+                            SECTION  = 'CERCLE',
+                                CARA = 'R', VALE = 0.005),));
+                                
+# Boundary conditions
+# -------------------------------------
+# The boundary conditions can be applied into nodes, node groups  elements 
+# or element groups
+
+clim=AFFE_CHAR_MECA( MODELE=modl,DDL_IMPO=(
+                   _F( TOUT = 'OUI',    DZ = 0., ),
+                   _F( GROUP_NO = ('Fix'),   DX = 0., DY = 0.),
+                   _F( GROUP_NO = ('Roller'),         DY = 0.)) );
+
+
+# Loads definition
+# -------------------------
+# Point load on the middle node
+
+charg=AFFE_CHAR_MECA( MODELE=modl,
+          FORCE_NODALE=_F( GROUP_NO = ('Load'),  FY = -10000),);
+
+# Resolution
+# ----------
+# Global command for the resolution of linear static problems and thermo-elastic 
+# with the field of materials defined
+# and the loads and boundary conditions
+
+res1=MECA_STATIQUE(        MODELE=modl,     CHAM_MATER=chmat,
+            CARA_ELEM=sect,EXCIT=( _F( CHARGE = charg),_F( CHARGE = clim)));
+
+# Calculations of derived fields
+# ----------------------
+# REAC_NODA = reaction forces
+# SIEF_ELNO = internal forces
+
+
+res1=CALC_CHAMP(reuse=res1,
+                  FORCE=('REAC_NODA',),
+                  RESULTAT=res1);
+
+res1=CALC_CHAMP(reuse=res1,
+                  CONTRAINTE=('SIEF_ELNO',),
+                  RESULTAT=res1);
+
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(RESULTAT=res1,
+                  NOM_CHAM='DEPL',
+                  GROUP_NO='Load',),);
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(RESULTAT=res1,
+                  NOM_CHAM='REAC_NODA',
+                  GROUP_NO=('Fix','Roller')),);
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=_F(RESULTAT=res1,
+                  NOM_CHAM='SIEF_ELNO',
+                  NOM_CMP='N',
+                  GROUP_MA='TOUT'),);
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 80,
+          RESU=_F(RESULTAT=res1,
+                  NOM_CHAM=('DEPL','SIEF_ELNO'  ),));
+
+
+FIN();
