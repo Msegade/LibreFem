@@ -1,7 +1,7 @@
 P actions make_etude
-P version 13.3
+P version stable
 A args 
-A memjeveux 64.0
+A memjeveux 1024
 A tpmax 600
 P time_limit 120
 P memory_limit 1024
@@ -10,7 +10,7 @@ P mpi_nbcpu 1
 P mpi_nbnoeud 1
 
 F comm fuselage.comm D  1
-F mmed mesh.med D  20
+F mmed linearMesh.med D  20
 F mess fuselageStudy.mess R  6
 F resu fuselageStudy.resu R  8
 F rmed fuselageStudy.rmed R  80
