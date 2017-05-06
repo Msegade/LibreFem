@@ -52,6 +52,7 @@ clim=AFFE_CHAR_MECA( MODELE=modl,DDL_IMPO=(
                                               DRX = 0.0, DRY = 0, DRZ = 0 
                      ),)
 );
+# Allow only radial displacements
 rdisp=AFFE_CHAR_MECA( MODELE=modl,
                         ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0));
 
@@ -61,7 +62,7 @@ rdisp=AFFE_CHAR_MECA( MODELE=modl,
 # -------------------------
 
 charg=AFFE_CHAR_MECA( MODELE=modl,
-          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES=-50),);
+          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES=50),);
 
 # Resolution
 # ----------
@@ -80,15 +81,17 @@ res1 = CALC_CHAMP(reuse=res1,
                     CONTRAINTE=('SIEF_ELNO', 'SIGM_ELNO',)
 );
 
-res1 = MODI_REPERE(reuse=res1,
-                    RESULTAT=res1,
-                    MODI_CHAM=_F(TYPE_CHAM='VECT_3D',
+# Convert the displacements to cylindrical coordinates
+
+res2 = MODI_REPERE( RESULTAT=res1,
+                    MODI_CHAM=_F(
                                  NOM_CHAM='DEPL',
-                                 NOM_CMP=('DX','DY','DZ')
+                                 NOM_CMP=('DX','DY','DZ'),
+                                 TYPE_CHAM='VECT_3D',
                     ),
-                    REPERE='COQUE_UTIL_CYL',
-                    AFFE= _F( ORIGINE = (0.0, 0.0, 0.0),
-                             AXE_Z = (0.0, 0.0, 1.0)),
+                    REPERE='CYLINDRIQUE',
+                    AFFE = _F( ORIGINE = (0.0, 0.0, 0.0),
+                               AXE_Z =   (0.0, 0.0, 1.0)),
 );
 
 # Print results
@@ -99,5 +102,11 @@ IMPR_RESU(FORMAT='MED',
           RESU=_F(RESULTAT=res1,
                   NOM_CHAM=('DEPL', 'SIEF_ELNO', 'SIGM_ELNO' ),));
 
+# Results in cylindrical coordinates
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 81,
+          RESU=_F(RESULTAT=res2,
+                  NOM_CHAM=('DEPL', ),));
 
 FIN();
