@@ -1,0 +1,113 @@
+DEBUT();
+
+# Read mesh
+# ------------------
+
+mesh=LIRE_MAILLAGE( FORMAT='MED' );
+
+
+# Reorient all normals so they are coherent
+# ----------------------------------------
+
+mesh=MODI_MAILLAGE(reuse=mesh,
+                      INFO=1,
+                      MAILLAGE=mesh,
+                      ORIE_NORM_COQUE=_F(GROUP_MA=('ShellElements',),));
+
+# Coque_3d modelisation   
+# ----------------------------------------
+
+modl=AFFE_MODELE( MAILLAGE=mesh,
+                 AFFE=_F( 
+                        GROUP_MA = 'ShellElements',
+                        PHENOMENE = 'MECANIQUE',
+                        MODELISATION = 'DKT'
+                  ) 
+);
+
+# Material definition
+# ----------------------
+
+al2024t4=DEFI_MATERIAU(ELAS=_F( E = 73e6,NU = 0.33,) );
+
+# Assignment of the material on the mesh
+# ---------------------------------------
+
+chmat=AFFE_MATERIAU(MAILLAGE=mesh, 
+                    AFFE=_F( GROUP_MA = 'ShellElements',MATER = al2024t4)
+);
+
+# Section Assigment
+# -------------------------------------
+
+sect=AFFE_CARA_ELEM( MODELE=modl,
+                     COQUE=(_F( GROUP_MA = 'ShellElements', EPAIS=0.002)));
+                                
+# Boundary conditions
+# -------------------------------------
+
+# Rotations and longitudinal displacement
+clim=AFFE_CHAR_MECA( MODELE=modl,DDL_IMPO=(
+                   _F( GROUP_NO = 'FixNodes', DZ = 0., 
+                                              DRX = 0.0, DRY = 0, DRZ = 0 
+                     ),)
+);
+# Allow only radial displacements
+rdisp=AFFE_CHAR_MECA( MODELE=modl,
+                        ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0));
+
+
+
+# Loads definition
+# -------------------------
+
+charg=AFFE_CHAR_MECA( MODELE=modl,
+          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES=50),);
+
+# Resolution
+# ----------
+
+res1=MECA_STATIQUE(        MODELE=modl,     CHAM_MATER=chmat,
+            CARA_ELEM=sect, EXCIT=( 
+                                    _F( CHARGE = charg),
+                                    _F( CHARGE = clim),
+                                    _F( CHARGE = rdisp))
+);
+
+# Improve results
+# ----------------
+res1 = CALC_CHAMP(reuse=res1,
+                    RESULTAT=res1,
+                    CONTRAINTE=('SIGM_ELNO',),
+                    CRITERES=('SIEQ_ELNO',)
+);
+
+# Convert the displacements to cylindrical coordinates
+
+res2 = MODI_REPERE( RESULTAT=res1,
+                    MODI_CHAM=_F(
+                                 NOM_CHAM='DEPL',
+                                 NOM_CMP=('DX','DY','DZ'),
+                                 TYPE_CHAM='VECT_3D',
+                    ),
+                    REPERE='CYLINDRIQUE',
+                    AFFE = _F( ORIGINE = (0.0, 0.0, 0.0),
+                               AXE_Z =   (0.0, 0.0, 1.0)),
+);
+
+# Print results
+# -------------
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 80,
+          RESU=_F(RESULTAT=res1,
+                  NOM_CHAM=('DEPL', 'SIEQ_ELNO', 'SIGM_ELNO' ),));
+
+# Results in cylindrical coordinates
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 81,
+          RESU=_F(RESULTAT=res2,
+                  NOM_CHAM=('DEPL', ),));
+
+FIN();
