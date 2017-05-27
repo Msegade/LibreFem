@@ -165,6 +165,21 @@ res1 = CALC_CHAMP(reuse=res1,
                     CRITERES=('SIEQ_ELNO',)
 );
 
+sol_up = POST_CHAMP ( RESULTAT=res1,
+                    EXTR_COQUE = _F(
+                        NOM_CHAM = 'SIEQ_ELNO',
+                        NUME_COUCHE = 1,
+                        NIVE_COUCHE = 'SUP')
+                );
+sol_down = POST_CHAMP ( RESULTAT=res1,
+                        EXTR_COQUE = _F(
+                            NOM_CHAM = 'SIEQ_ELNO',
+                            NUME_COUCHE = 1,
+                            NIVE_COUCHE = 'INF')
+                );
+                        
+
+
 # Convert the displacements to cylindrical coordinates
 
 #res2 = MODI_REPERE( RESULTAT=res1,
@@ -183,8 +198,20 @@ res1 = CALC_CHAMP(reuse=res1,
 
 IMPR_RESU(FORMAT='MED',
           UNITE = 80,
-          RESU=_F(RESULTAT=res1,
-                  NOM_CHAM=('DEPL', 'SIEQ_ELNO', 'SIGM_ELNO' ),));
+          RESU=(
+                _F(RESULTAT=res1,
+                  NOM_CHAM=('DEPL', 
+                            'SIEQ_ELNO', 
+                            'SIGM_ELNO' 
+                  ),),
+                _F(RESULTAT=sol_up,
+                  NOM_CHAM=( 'SIEQ_ELNO',)
+                  ),
+                _F(RESULTAT=sol_down,
+                  NOM_CHAM=( 'SIEQ_ELNO', )
+                  ),
+            )
+);
 
 # Results in cylindrical coordinates
 
