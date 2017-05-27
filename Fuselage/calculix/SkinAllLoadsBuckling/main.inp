@@ -1,0 +1,60 @@
+*INCLUDE, INPUT=allinone.inp
+
+*MATERIAL,NAME=al2024t4
+*ELASTIC
+7.3000E+07,0.33
+
+*SHELL SECTION,MATERIAL=al2024t4,ELSET=S4R,
+2.0000E-03
+
+*ORIENTATION, NAME=CYL, SYSTEM=CYLINDRICAL
+0, 0, 0, 6, 0, 0
+
+*SURFACE,NAME=SurfNodes,TYPE=NODE
+ForceNodes
+
+*Coupling, CONSTRAINT NAME=c1, REF NODE=7321, SURFACE=SurfNodes, ORIENTATION=CYL
+*Kinematic
+1, 1
+2, 2
+3, 3
+
+*TRANSFORM, NSET=MNode, TYPE=C
+0, 0, 0, 0, 0, 1
+
+*TRANSFORM, NSET=FixNodes, TYPE=C
+0, 0, 0, 0, 0, 1
+
+*BOUNDARY
+FixNodes,2,2
+FixNodes,3,3
+FixNodes,4,4
+FixNodes,5,5
+FixNodes,6,6
+
+*STEP
+*STATIC
+
+*DLOAD
+PressureLoad, P, 50
+
+*Cload
+MNode, 1, 200.
+MNode, 2, -250.
+MNode, 3, -300.
+**MNode, 4, 500.
+**MNode, 5, -500.
+**MNode, 6, -600.
+
+  *NODE FILE 
+U,
+  *EL FILE
+S,
+*END STEP
+
+*STEP, PERTURBATION
+*BUCKLE
+6
+*NODE FILE
+U
+*END STEP
