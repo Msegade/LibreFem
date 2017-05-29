@@ -3,23 +3,22 @@ DEBUT();
 # Read mesh
 # ------------------
 
-meshinit=LIRE_MAILLAGE( FORMAT='MED' );
+meshinit=LIRE_MAILLAGE( FORMAT='MED',)
 
 
-# Reorient all normals so they are coherent
-# ----------------------------------------
-
-#meshinit=MODI_MAILLAGE(reuse=meshinit,
-#                      INFO=1,
-#                      MAILLAGE=meshinit,
-#                      ORIE_NORM_COQUE=_F(GROUP_MA=('ShellElements',),));
-
-# Add a 1D element in the master node
+# Add a Point element in the master node
 # ------------------------------------
 
 mesh = CREA_MAILLAGE(MAILLAGE=meshinit,
                      CREA_POI1=_F(NOM_GROUP_MA='MNode',
                                   GROUP_NO='MNode',),);
+
+# Check the mesh
+# ---------------
+IMPR_RESU(FORMAT='MED',
+        UNITE=71,
+        RESU=_F(MAILLAGE=mesh)
+);
 
 # DKT modelisation and DIS_TR for Mnode
 # ----------------------------------------
@@ -60,15 +59,16 @@ cara=AFFE_CARA_ELEM( MODELE=modl,
                      COQUE=(_F( 
                             GROUP_MA = 'ShellElements', 
                             EPAIS=0.002,
-                            VECTEUR=(0.0,0.0,1.0)
+                            VECTEUR=(0.0,0.0,1.0),
+                            A_CIS=9000,
                      )),
                      DISCRET=(_F(CARA='M_TR_D_N',
                                    GROUP_MA='MNode',
                                    VALE=(0,0,0,0,0,0,0,0,0,0,),),
                                 _F(CARA='K_TR_D_N',
                                    GROUP_MA='MNode',
-                                   #VALE=(0,0,0,0,0,0,),),),
-                                   VALE=(0.1,0.1,0.1,0.1,0.1,0.1,),),),
+                                   VALE=(0,0,0,0,0,0,),),),
+                                   #VALE=(0.1,0.1,0.1,0.1,0.1,0.1,),),),
 );
                                 
 # Boundary conditions
@@ -81,17 +81,8 @@ clim=AFFE_CHAR_MECA( MODELE=modl,
                             GROUP_NO = 'FixNodes',
                             DZ = 0., 
                             DRX = 0.0, DRY = 0, DRZ = 0 
-                    ),
-                   #_F( 
-                   #         GROUP_NO = 'MNode', 
-                   #         DX = 0, 
-                   #         DY = 0, 
-                   #         DZ = 0, 
-                   ##         DRX = 0, 
-                   ##         DRY = 0, 
-                   ##         DRZ = 0, 
-                   #),
-                )
+                    ),),
+                    LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
 );
 # Allow only radial displacements
 rdisp=AFFE_CHAR_MECA( MODELE=modl,
@@ -110,52 +101,17 @@ FX=200; FY=-250; FZ=-300;
 MX=500; MY=-500; MZ=-600;
 
 pload=AFFE_CHAR_MECA( MODELE=modl,
-                        LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
-                        #LIAISON_RBE3=( 
-                        #    _F(
-                        #      GROUP_NO_MAIT='MNode',
-                        #      #DDL_MAIT=('DX','DY','DZ','DRX','DRY','DRZ'),
-                        #      DDL_MAIT=('DRX', 'DRY', 'DRZ'),
-                        #      GROUP_NO_ESCL='ForceNodes',
-                        #      #DDL_ESCL=('DX-DY-DZ-DRX-DRY-DRZ'),
-                        #      DDL_ESCL=('DX-DY-DZ'),
-                        #      COEF_ESCL=(1,)
-                        #    ),
-                        #),
-                        #LIAISON_ELEM=_F(GROUP_MA_1='ForceEdges',
-                        #                GROUP_NO_2='MNode',
-                        #                OPTION='3D_POU'),
-                        #LIAISON_UNIF=_F(
-                        #                GROUP_NO = ('ForceNodes', 'MNode'),
-                        #                DDL=('DX','DY','DZ')
-                        #),
-                        #LIAISON_COQUE=_F(
-                        #                GROUP_NO_1 = 'MNode',
-                        #                GROUP_NO_2 = 'ForceNodes'
-                        #),
+                        #LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
                         FORCE_NODALE=_F(GROUP_NO='MNode',
                                         FX=FX, FY=FY, FZ=FZ,
-                                        #MX=MX, MY=MY, MZ=MZ
+                                        MX=MX, MY=MY, MZ=MZ
                         ),
 );
 
 # Resolution
 # ----------
 
-# Fixed Load
 res1=MECA_STATIQUE(  MODELE=modl,     
-                     CHAM_MATER=chmat,
-                     CARA_ELEM=cara, 
-                     EXCIT=( 
-                                    _F( CHARGE = charg),
-                                    #_F( CHARGE = pload),
-                                    _F( CHARGE = clim),
-                                    _F( CHARGE = rdisp)),
-                    OPTION = 'SIEF_ELGA',
-);
-
-# Variable Load
-res2=MECA_STATIQUE(  MODELE=modl,     
                      CHAM_MATER=chmat,
                      CARA_ELEM=cara, 
                      EXCIT=( 
@@ -166,114 +122,50 @@ res2=MECA_STATIQUE(  MODELE=modl,
                     OPTION = 'SIEF_ELGA',
 );
 
+
 # Stress field to calculate the geometric stiffnes matrix
 # -------------------------------------------------------
 
-# Fixed Load
-stressgf = CREA_CHAMP (
+stressg = CREA_CHAMP (
                       RESULTAT = res1,   
-                      TYPE_CHAM = 'ELGA_SIEF_R', 
                       OPERATION = 'EXTR',
+                      TYPE_CHAM = 'ELGA_SIEF_R', 
                       NOM_CHAM = 'SIEF_ELGA',
                       TYPE_MAXI = 'MINI',
-                      TYPE_RESU = 'VALE')
-# Variable Load
-stressgv = CREA_CHAMP (
-                      RESULTAT = res2,   
-                      TYPE_CHAM = 'ELGA_SIEF_R', 
-                      OPERATION = 'EXTR',
-                      NOM_CHAM = 'SIEF_ELGA',
-                      TYPE_MAXI = 'MINI',
-                      TYPE_RESU = 'VALE')
+                      TYPE_RESU = 'VALE'
+                      )
 
-# Geometric stiffness matrix
-# --------------------------
-
-geommatf = CALC_MATR_ELEM ( OPTION = 'RIGI_GEOM',
-                           MODELE = modl,
-                           CARA_ELEM = cara,
-                           SIEF_ELGA = stressgf)
-geommatv = CALC_MATR_ELEM ( OPTION = 'RIGI_GEOM',
-                           MODELE = modl,
-                           CARA_ELEM = cara,
-                           SIEF_ELGA = stressgv)
-
-# Material stiffness matrix
+# Assembly 
 # ---------------------------
 
-matmat = CALC_MATR_ELEM (  OPTION = 'RIGI_MECA',
-                           MODELE = modl,
-                           CHAM_MATER = chmat,
-                           CARA_ELEM = cara,
-                           CHARGE = (charg, pload, clim, rdisp))
+ASSEMBLAGE ( MODELE=modl,
+             CHAM_MATER=chmat,
+             CARA_ELEM=cara,
+             CHARGE = (clim,rdisp,charg),
+             NUME_DDL = CO('NU'),
+             MATR_ASSE=(
+              _F( MATRICE= CO('masrim'), OPTION= 'RIGI_MECA'),
+              _F( MATRICE= CO('masrig'), OPTION= 'RIGI_GEOM',SIEF_ELGA=stressg),),);
 
-# Assembly the matrices
-# ---------------------
-
-numeddl = NUME_DDL (MATR_RIGI = geommatv);
-matgfass = ASSE_MATRICE (MATR_ELEM = geommatf, NUME_DDL = numeddl);
-matgvass = ASSE_MATRICE (MATR_ELEM = geommatv, NUME_DDL = numeddl);
-matmass = ASSE_MATRICE (MATR_ELEM = matmat,  NUME_DDL = numeddl);
-
-# Combine material and fixed load
-# --------------------------------
-mattot = COMB_MATR_ASSE(
-            COMB_R = (
-                _F(MATR_ASSE = matgfass, COEF_R = 1.0),
-                _F(MATR_ASSE = matmass, COEF_R = 1.0),
-            )
-);
-
-min = 1.e-1
-max = 5.0
-
-
-# Search for the interval of critical load
-# ----------------------------------------
-
-#INFO_MODE  ( MATR_RIGI = mattot,
-#             MATR_RIGI_GEOM = matgvass,
-#             TYPE_MODE = 'MODE_FLAMB',
-#             #SOLVEUR=_F(RENUM='METIS',
-#             #           NPREC=8,
-#             #           METHODE='MUMPS',),
-#             CHAR_CRIT = (min, max)
-#             #NMAX_CHAR_CRIT = 6,
-#)    
 
 
 # Calculate the modes
 # -------------------
 
-modp1 = CALC_MODES (MATR_RIGI = mattot,
-                    MATR_RIGI_GEOM = matgvass,
-                    TYPE_RESU = 'MODE_FLAMB',
-                    #OPTION = 'PLUS_PETITE',
-                    CALC_CHAR_CRIT = _F( 
-                            #CHAR_CRIT = (min, max),
-                            NMAX_CHAR_CRIT = 6,
+modp1 = CALC_MODES (MATR_RIGI_GEOM = masrig,
+                    VERI_MODE = _F(SEUIL=5.E-5),
+                    OPTION = 'PLUS_PETITE',
+                    MATR_RIGI = masrim,
+                    SOLVEUR_MODAL  = 
+                        _F( 
+                            METHODE='SORENSEN'
                     ),
-                    SOLVEUR_MODAL  = _F(
-                                        #METHODE = 'SORENSEN',
-                                        METHODE = 'TRI_DIAG',
-                                        MODE_RIGIDE = 'OUI',
-                                        #DIM_SOUS_ESPACE = 80,
-                                        #DIM_SOUS_ESPACE = 30,
-                                        #NMAX_ITER_SOREN = 80,
-                                        #METHODE = 'TRI_DIAG',
-                                        #MODE_RIGIDE = 'OUI',
+                    TYPE_RESU = 'MODE_FLAMB',
+                    CALC_CHAR_CRIT = _F( 
+                            NMAX_CHAR_CRIT = 6,
                     ),
 )
 
-#modp1 = MODE_ITER_SIMULT(
-#            MATR_RIGI=mattot,
-#            MATR_RIGI_GEOM = matgvass,
-#            TYPE_RESU = 'MODE_FLAMB',
-#            CALC_CHAR_CRIT=_F(  
-#                OPTION = 'BANDE',
-#                CHAR_CRIT = (min, max),
-#            )
-#);
 # Normalize the modes 
 # ------------------
 

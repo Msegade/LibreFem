@@ -22,7 +22,7 @@ post: $(POST).py $(MODEL)Study.rmed
 	pvpython $<
 
 clean:
-	rm -f $(MESH).med
+	rm -f $(MESH).med modifiedMesh.med
 	rm -f $(MODEL)Study.export.tmp
 	rm -rf $(MODEL)Study.{rmed,base,resu,mess}
 	rm -f  $(MODEL)StudyCyl.rmed
