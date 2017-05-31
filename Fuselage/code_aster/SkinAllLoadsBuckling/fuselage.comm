@@ -93,7 +93,7 @@ rdisp=AFFE_CHAR_MECA( MODELE=modl,
 # Loads definition
 # -------------------------
 
-charg=AFFE_CHAR_MECA( MODELE=modl,
+press=AFFE_CHAR_MECA( MODELE=modl,
           FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES=50),);
 
 
@@ -101,7 +101,6 @@ FX=200; FY=-250; FZ=-300;
 MX=500; MY=-500; MZ=-600;
 
 pload=AFFE_CHAR_MECA( MODELE=modl,
-                        #LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
                         FORCE_NODALE=_F(GROUP_NO='MNode',
                                         FX=FX, FY=FY, FZ=FZ,
                                         MX=MX, MY=MY, MZ=MZ
@@ -111,14 +110,27 @@ pload=AFFE_CHAR_MECA( MODELE=modl,
 # Resolution
 # ----------
 
-res1=MECA_STATIQUE(  MODELE=modl,     
+# Variable load
+resvar=MECA_STATIQUE(  MODELE=modl,     
                      CHAM_MATER=chmat,
                      CARA_ELEM=cara, 
                      EXCIT=( 
-                                    _F( CHARGE = charg),
-                                    _F( CHARGE = pload),
+                                    _F( CHARGE = rdisp),
                                     _F( CHARGE = clim),
-                                    _F( CHARGE = rdisp)),
+                                    _F( CHARGE = press),
+                                    _F( CHARGE = pload),),
+                    OPTION = 'SIEF_ELGA',
+);
+
+resfix=MECA_STATIQUE(  MODELE=modl,     
+                     CHAM_MATER=chmat,
+                     CARA_ELEM=cara, 
+                     EXCIT=( 
+                                    _F( CHARGE = rdisp),
+                                    _F( CHARGE = clim),
+                                    #_F( CHARGE = press),
+                                    #_F( CHARGE = pload),
+                    ),
                     OPTION = 'SIEF_ELGA',
 );
 
@@ -126,44 +138,113 @@ res1=MECA_STATIQUE(  MODELE=modl,
 # Stress field to calculate the geometric stiffnes matrix
 # -------------------------------------------------------
 
-stressg = CREA_CHAMP (
-                      RESULTAT = res1,   
-                      OPERATION = 'EXTR',
+# Variable Load
+sigvar = CREA_CHAMP (
+                      RESULTAT = resvar,   
                       TYPE_CHAM = 'ELGA_SIEF_R', 
+                      OPERATION = 'EXTR',
                       NOM_CHAM = 'SIEF_ELGA',
                       TYPE_MAXI = 'MINI',
                       TYPE_RESU = 'VALE'
                       )
 
-# Assembly 
+# Fixed Load
+sigfix = CREA_CHAMP (
+                      RESULTAT = resfix,   
+                      TYPE_CHAM = 'ELGA_SIEF_R', 
+                      OPERATION = 'EXTR',
+                      NOM_CHAM = 'SIEF_ELGA',
+                      TYPE_MAXI = 'MINI',
+                      TYPE_RESU = 'VALE'
+                      )
+
+# Elementary matrices 
 # ---------------------------
 
-ASSEMBLAGE ( MODELE=modl,
-             CHAM_MATER=chmat,
-             CARA_ELEM=cara,
-             CHARGE = (clim,rdisp,charg),
-             NUME_DDL = CO('NU'),
-             MATR_ASSE=(
-              _F( MATRICE= CO('masrim'), OPTION= 'RIGI_MECA'),
-              _F( MATRICE= CO('masrig'), OPTION= 'RIGI_GEOM',SIEF_ELGA=stressg),),);
+matgv = CALC_MATR_ELEM (OPTION = 'RIGI_GEOM',
+                            MODELE = modl,
+                            CARA_ELEM = cara,
+                            SIEF_ELGA = sigvar,)
+
+matgf = CALC_MATR_ELEM (OPTION = 'RIGI_GEOM',
+                            MODELE = modl,
+                            CARA_ELEM = cara,
+                            SIEF_ELGA = sigfix,)
+
+# Both loads
+matm = CALC_MATR_ELEM (OPTION = 'RIGI_MECA',
+                          MODELE = modl,
+                          CHAM_MATER = chmat,
+                          CARA_ELEM = cara,
+                          CHARGE = (rdisp, clim, 
+                                    press, pload,
+                    ),)
+
+# Assembly
+# ---------
+
+nuddl = NUME_DDL (MATR_RIGI = matm,)
+masrigv = ASSE_MATRICE (MATR_ELEM = matgv,
+                         NUME_DDL = nuddl,)
+masrigf = ASSE_MATRICE (MATR_ELEM = matgf,
+                         NUME_DDL = nuddl,)
+masrim = ASSE_MATRICE (MATR_ELEM = matm,
+                         NUME_DDL = nuddl,)
+# Addition
+mascomb = COMB_MATR_ASSE(
+            COMB_R=(
+                _F(MATR_ASSE=masrim, COEF_R=1.0),
+                _F(MATR_ASSE=masrigf, COEF_R=1.0),
+    ),
+);    
+
 
 
 
 # Calculate the modes
 # -------------------
 
-modp1 = CALC_MODES (MATR_RIGI_GEOM = masrig,
-                    VERI_MODE = _F(SEUIL=5.E-5),
-                    OPTION = 'PLUS_PETITE',
-                    MATR_RIGI = masrim,
-                    SOLVEUR_MODAL  = 
-                        _F( 
-                            METHODE='SORENSEN'
-                    ),
+mini=-0.6;
+maxi=-0.4;
+
+INFO_MODE( 
+    MATR_RIGI=mascomb,
+    MATR_RIGI_GEOM=masrigv,
+    TYPE_MODE='MODE_FLAMB', 
+    CHAR_CRIT=(mini, maxi,),
+);
+
+#modp1=CALC_MODES(
+#	TYPE_RESU='MODE_FLAMB',
+#	OPTION='BANDE',
+#	STOP_BANDE_VIDE='OUI',
+#	MATR_RIGI=mascomb,
+#	MATR_RIGI_GEOM=masrigv,
+#	CALC_CHAR_CRIT=_F(
+#		CHAR_CRIT=(mini,maxi,),
+#	),
+#	VERI_MODE=_F(
+#		STOP_ERREUR='NON',
+#	),
+#);
+
+modp1 = CALC_MODES (MATR_RIGI_GEOM = masrigv,
+                    OPTION = 'BANDE',
+                    #OPTION = 'CENTRE',
+	                STOP_BANDE_VIDE='OUI',
+                    MATR_RIGI = mascomb,
+                    #SOLVEUR_MODAL  = 
+                    #    _F( 
+                    #        METHODE='SORENSEN'
+                    #),
                     TYPE_RESU = 'MODE_FLAMB',
                     CALC_CHAR_CRIT = _F( 
-                            NMAX_CHAR_CRIT = 6,
+                            #NMAX_CHAR_CRIT = 6,
+                            CHAR_CRIT = (mini, maxi),
+                            #FREQ=0.1
                     ),
+                    VERI_MODE=_F(
+                        STOP_ERREUR='NON',)
 )
 
 # Normalize the modes 
@@ -178,6 +259,7 @@ IMPR_RESU(FORMAT='MED',
           UNITE = 80,
           RESU=_F(RESULTAT=modp1,)
     )
+
                   
 
 
