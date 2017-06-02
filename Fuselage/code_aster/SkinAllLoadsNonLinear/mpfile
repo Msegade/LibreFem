@@ -1,0 +1,19 @@
+P actions make_etude
+P memory_limit 1024
+P mode interactif
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P ncpus 1
+P rep_trav /tmp/miguel-localhost-interactif.11660
+P time_limit 120
+P version stable
+A args 
+A memjeveux 900
+A tpmax 600
+F comm /home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage/code_aster/SkinAllLoadsNonLinear/fuselage.comm D  1
+F mmed /home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage/code_aster/SkinAllLoadsNonLinear/linearMesh.med D  20
+F mess /home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage/code_aster/SkinAllLoadsNonLinear/fuselageStudy.mess R  6
+F resu /home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage/code_aster/SkinAllLoadsNonLinear/fuselageStudy.resu R  8
+F rmed /home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage/code_aster/SkinAllLoadsNonLinear/fuselageStudy.rmed R  80
+F rmed /home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage/code_aster/SkinAllLoadsNonLinear/fuselageStudyCyl.rmed R  81
+R base /home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage/code_aster/SkinAllLoadsNonLinear/fuselageStudy.base RC 0
