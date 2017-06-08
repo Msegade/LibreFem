@@ -1,0 +1,55 @@
+POURSUITE();
+
+# Field to project results
+# Coque3D
+#iniModel=AFFE_MODELE(MAILLAGE=meshinit,
+#                    AFFE=_F(TOUT='OUI',
+#                            PHENOMENE='MECANIQUE',
+#                            MODELISATION='3D',),);
+#
+#projRes=PROJ_CHAMP(RESULTAT=res1,
+#                   MODELE_1=modl,    
+#                   MODELE_2=iniModel,);
+
+res1 = CALC_CHAMP(reuse=res1,
+                    RESULTAT=res1,
+                    CONTRAINTE=('SIGM_ELNO',),
+                    CRITERES=('SIEQ_ELNO',)
+);
+
+sol_up = POST_CHAMP ( RESULTAT=res1,
+                    EXTR_COQUE = _F(
+                        NOM_CHAM = 'SIEQ_ELNO',
+                        NUME_COUCHE = 1,
+                        NIVE_COUCHE = 'SUP')
+                );
+sol_down = POST_CHAMP ( RESULTAT=res1,
+                        EXTR_COQUE = _F(
+                            NOM_CHAM = 'SIEQ_ELNO',
+                            NUME_COUCHE = 1,
+                            NIVE_COUCHE = 'INF')
+                );
+                        
+
+# Print results
+# -------------
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 80,
+          RESU=(
+                _F(RESULTAT=res1,
+                  NOM_CHAM=('DEPL', 
+                            'SIEQ_ELNO', 
+                            'SIGM_ELNO' 
+                  ),),
+                _F(RESULTAT=sol_up,
+                  NOM_CHAM=( 'SIEQ_ELNO',)
+                  ),
+                _F(RESULTAT=sol_down,
+                  NOM_CHAM=( 'SIEQ_ELNO', )
+                  ),
+            )
+);
+
+
+FIN();

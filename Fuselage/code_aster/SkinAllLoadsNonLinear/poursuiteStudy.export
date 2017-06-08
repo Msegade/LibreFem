@@ -1,0 +1,42 @@
+P actions make_etude
+P aster_root /home/miguel/Apps/salome_meca/V2016/tools/Code_aster_frontend-20160
+P consbtc oui
+P corefilesize unlimited
+P cpresok RESNOOK
+P debug nodebug
+P display coolermaster:0
+P facmtps 1
+P lang en
+P mclient coolermaster
+P memjob 524288
+P mode interactif
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P nbmaxnook 5
+P noeud localhost
+P nomjob New
+P origine ASTK 2016.0
+P platform Linux64
+P profastk miguel@coolermaster:New
+P protocol_copyfrom asrun.plugins.server.SCPServer
+P protocol_copyto asrun.plugins.server.SCPServer
+P protocol_exec asrun.plugins.server.SSHServer
+P proxy_dir /tmp
+P rep_trav /tmp/miguel-localhost-interactif.16956
+P serveur localhost
+P soumbtc oui
+P tpsjob 15
+P uclient miguel
+P username miguel
+P version stable
+A args 
+A memjeveux 64.0
+A tpmax 900
+F comm ./poursuite.comm D  1
+R base ./fuselageStudy.base DC 0
+F mmed ./linearMesh.med D  20
+R base ./fuselageStudy.base RC 0
+F mmed ./linearMesh.med R  20
+F rmed ./poursuite.rmed R  80
+F resu ./poursuite.resu R  8
+F mess ./poursuite.mess R  6
