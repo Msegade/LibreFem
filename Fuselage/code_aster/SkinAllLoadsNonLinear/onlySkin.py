@@ -84,6 +84,8 @@ nodeID = Mesh_1.AddNode( 0, 0, length )
 MNode = Mesh_1.CreateEmptyGroup( SMESH.NODE, 'MNode' )
 nbAdd = MNode.Add( [ nodeID ] )
 
+#Mesh_1.ConvertToQuadratic(0)
+
 try:
   Mesh_1.ExportMED( r''+ExportPATH+'linearMesh.med', 0, SMESH.MED_V2_2, 1, None ,1)
 except:

@@ -4,20 +4,21 @@ DEBUT();
 # ------------------
 
 meshinit=LIRE_MAILLAGE( FORMAT='MED' );
-
-
-# Reorient all normals so they are coherent
-# ----------------------------------------
-
-#meshinit=MODI_MAILLAGE(reuse=meshinit,
-#                      INFO=1,
-#                      MAILLAGE=meshinit,
-#                      ORIE_NORM_COQUE=_F(GROUP_MA=('ShellElements',),));
+#
+# Add one more element for coque_3d
+# ---------------------------------
+#mesh9=CREA_MAILLAGE(
+#                MAILLAGE=meshinit,
+#                 MODI_MAILLE=_F(GROUP_MA='ShellElements',
+#                 OPTION='QUAD8_9',
+#                              ),);
 
 # Add a 1D element in the master node
 # ------------------------------------
 
-mesh = CREA_MAILLAGE(MAILLAGE=meshinit,
+mesh = CREA_MAILLAGE(
+                     MAILLAGE=meshinit,
+                     #MAILLAGE=mesh9,
                      CREA_POI1=_F(NOM_GROUP_MA='MNode',
                                   GROUP_NO='MNode',),);
 
@@ -30,6 +31,8 @@ modl=AFFE_MODELE( MAILLAGE=mesh,
                         GROUP_MA = ('ShellElements','ForceEdges'),
                         PHENOMENE = 'MECANIQUE',
                         MODELISATION = 'DKT'
+                        #MODELISATION = 'DKTG'
+                        #MODELISATION = 'COQUE_3D'
                   ),
                  _F( 
                         GROUP_MA = 'MNode',
@@ -81,15 +84,6 @@ clim=AFFE_CHAR_MECA( MODELE=modl,
                             DZ = 0., 
                             DRX = 0.0, DRY = 0, DRZ = 0 
                     ),
-                   #_F( 
-                   #         GROUP_NO = 'MNode', 
-                   #         DX = 0, 
-                   #         DY = 0, 
-                   #         DZ = 0, 
-                   #         DRX = 0, 
-                   #         DRY = 0, 
-                   #         #DRZ = 0, 
-                   #),
                 )
 );
 # Allow only radial displacements
@@ -105,44 +99,14 @@ charg=AFFE_CHAR_MECA( MODELE=modl,
           FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES=50),);
 
 
-from math import pi
 FX=200; FY=-250; FZ=-300;
 MX=500; MY=-500; MZ=-600;
-perimeter = 2*pi*1.9
-fx = FX/(perimeter)
-fy = FY/(perimeter)
-fz = FZ/(perimeter)
-mx = MX/(perimeter)
-my = MY/(perimeter)
-mz = MZ/(perimeter)
-#pload=AFFE_CHAR_MECA( MODELE=modl,
-#            FORCE_ARETE=_F( GROUP_MA = ('ForceEdges'), 
-#                        FX = fx, FY = fy, FZ = fz,
-#                        MX = mx, MY = my, MZ = mz
-#            )
-#);
 
 pload=AFFE_CHAR_MECA( MODELE=modl,
                         LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
-                        #LIAISON_RBE3=( _F(
-                        #      GROUP_NO_MAIT='MNode',
-                        #      DDL_MAIT=('DX','DY','DZ','DRX','DRY','DRZ'),
-                        #      #DDL_MAIT=('DZ','DRZ'),
-                        #      GROUP_NO_ESCL='ForceNodes',
-                        #      DDL_ESCL=('DX-DY-DZ-DRX-DRY-DRZ'),
-                        #      COEF_ESCL=(1.,)
-                        #)),
-                        #LIAISON_ELEM=_F(GROUP_MA_1='ForceNodes',
-                        #                GROUP_NO_2='MNode',
-                        #                OPTION='2D_POU'),
-                        #LIAISON_UNIF=_F(
-                        #                GROUP_NO = ('ForceNodes', 'MNode'),
-                        #                DDL=('DX','DY','DZ','DRX','DRY','DRZ')
-                        #),
                         FORCE_NODALE=_F(GROUP_NO='MNode',
                                         FX=FX, FY=FY, FZ=FZ,
                                         MX=MX, MY=MY, MZ=MZ
-                                        #MZ = -600
                         ),
 );
 
@@ -152,30 +116,63 @@ pload=AFFE_CHAR_MECA( MODELE=modl,
 function = DEFI_FONCTION( NOM_PARA='INST', VALE = (0.0, 0.0, 1.0, 1.0));
 
 listTime = DEFI_LIST_REEL( DEBUT= 0.0,
-                        INTERVALLE = _F (
+                            INTERVALLE = _F (
                             JUSQU_A = 1.0,
-                            PAS = 0.05)
+                            #PAS = 0.01
+                            PAS = 0.1
+                            #PAS = 0.25
+                            )
                     );
 
+
+listAuto=DEFI_LIST_INST(
+                          DEFI_LIST=_F(LIST_INST=listTime,
+                                       METHODE='AUTO',
+                                       PAS_MINI=1.E-04),
+                          ADAPTATION=_F(EVENEMENT='SEUIL',
+                                        MODE_CALCUL_TPLUS='FIXE',
+                                        PCENT_AUGM=100.0,
+                                        NOM_PARA='NB_ITER_NEWTON',
+                                        CRIT_COMP='LE',
+                                        NB_INCR_SEUIL=2),
+                          ECHEC=_F(
+                                   ACTION='DECOUPE',
+                                   SUBD_METHODE='MANUEL',
+                                   EVENEMENT='DIVE_RESI',
+                                   SUBD_PAS=2,
+                                   ),
+                          );
+   
 res1=STAT_NON_LINE(  
-            MODELE=modl,     
-            CHAM_MATER=chmat,
-            CARA_ELEM=cara, 
-            EXCIT=( 
-                _F( CHARGE = clim),
-                _F( CHARGE = rdisp),
-                _F( CHARGE = charg, 
-                    FONC_MULT = function),
-                _F( CHARGE = pload,
-                    FONC_MULT = function),
-            ),
-            COMPORTEMENT=_F(RELATION='ELAS',
-                            DEFORMATION='GROT_GDEP'),
-            INCREMENT = _F(LIST_INST = listTime),
-            NEWTON = _F( MATRICE = 'TANGENTE',
-                                 REAC_ITER = 1),
-            CONVERGENCE = _F( RESI_GLOB_RELA = 0.0001,
-                                      ITER_GLOB_MAXI = 30),
+              MODELE=modl,     
+              CHAM_MATER=chmat,
+              CARA_ELEM=cara, 
+              EXCIT=( 
+                  _F( CHARGE = clim),
+                  _F( CHARGE = rdisp),
+                  _F( CHARGE = charg, 
+                      FONC_MULT = function),
+                  _F( CHARGE = pload,
+                      FONC_MULT = function),
+              ),
+              COMPORTEMENT=_F(
+                              GROUP_MA='ShellElements',
+                              RELATION='ELAS',
+                              DEFORMATION='PETIT_REAC',
+                              #DEFORMATION='GROT_GDEP',
+              ),
+              INCREMENT = _F(
+                             LIST_INST = listAuto
+              ),
+              NEWTON = _F( 
+                          #MATRICE = 'ELASTIQUE',
+                          MATRICE = 'TANGENTE',
+                          REAC_ITER = 1 
+              ),
+              CONVERGENCE = _F( 
+                                RESI_GLOB_RELA = 1e-6,
+                                ITER_GLOB_MAXI = 30
+              ),
         
 );
 
@@ -202,19 +199,6 @@ sol_down = POST_CHAMP ( RESULTAT=res1,
                         
 
 
-# Convert the displacements to cylindrical coordinates
-
-#res2 = MODI_REPERE( RESULTAT=res1,
-#                    MODI_CHAM=_F(
-#                                 NOM_CHAM='DEPL',
-#                                 NOM_CMP=('DX','DY','DZ'),
-#                                 TYPE_CHAM='VECT_3D',
-#                    ),
-#                    REPERE='CYLINDRIQUE',
-#                    AFFE = _F( ORIGINE = (0.0, 0.0, 0.0),
-#                               AXE_Z =   (0.0, 0.0, 1.0)),
-#);
-
 # Print results
 # -------------
 
@@ -235,11 +219,5 @@ IMPR_RESU(FORMAT='MED',
             )
 );
 
-# Results in cylindrical coordinates
-
-#IMPR_RESU(FORMAT='MED',
-#          UNITE = 81,
-#          RESU=_F(RESULTAT=res2,
-#                  NOM_CHAM=('DEPL', ),));
 
 FIN();
