@@ -36,7 +36,9 @@ geompy = geomBuilder.New(theStudy)
 # Parameters
 Diameter = 3.8
 R = Diameter/2.0
-length = 6
+length = 6.0
+nStringers = 36
+nFrames = 6
 
 O = geompy.MakeVertex(0, 0, 0)
 OX = geompy.MakeVectorDXDYDZ(1, 0, 0)
@@ -73,9 +75,13 @@ sk.addSegmentAbsolute(0.030000, -1.900000)
 Sketch_2 = sk.wire(geomObj_3)
 Stringer = geompy.MakePrismVecH(Sketch_2, OZ, 6)
 Stringer.SetColor(SALOMEDS.Color(0,1,0))
-[StringerContact1,face_2,face_3, face_4, StringerContact2] = \
+[StringerContact1,face_2, face_3, face_4, StringerContact2] = \
         geompy.ExtractShapes(Stringer, geompy.ShapeType["FACE"], True)
 
+StringerContact = geompy.CreateGroup(Stringer, geompy.ShapeType["FACE"])
+id1 = geompy.GetSubShapeID(Stringer, StringerContact1)
+id2 = geompy.GetSubShapeID(Stringer, StringerContact2)
+geompy.UnionIDs(StringerContact, [id1, id2])
 
 geompy.addToStudy( O, 'O' )
 geompy.addToStudy( OX, 'OX' )
@@ -88,8 +94,7 @@ geompy.addToStudyInFather( Skin, SurfaceForce, 'SurfaceForce' )
 geompy.addToStudy( Frame, 'Frame' )
 geompy.addToStudyInFather( Frame, FrameContact, 'FrameContact' )
 geompy.addToStudy( Stringer, 'Stringer' )
-geompy.addToStudyInFather( Stringer, StringerContact1, 'StringerContact1' )
-geompy.addToStudyInFather( Stringer, StringerContact2, 'StringerContact2' )
+geompy.addToStudyInFather( Stringer, StringerContact, 'StringerContact' )
 
 ###
 ### SMESH component
@@ -100,59 +105,82 @@ import  SMESH, SALOMEDS
 from salome.smesh import smeshBuilder
 
 # Parameters
-meshSize = 0.1
+frameMeshSize = 0.1
+stringerMeshSize = 0.1
+skinMeshSize = 0.07
 smesh = smeshBuilder.New(theStudy)
 
 # Skin Mesh 
-Mesh_1 = smesh.Mesh(Skin)
-Regular_1D = Mesh_1.Segment()
-Local_Length_1 = Regular_1D.LocalLength(meshSize,None,1e-07)
-Quadrangle_2D = Mesh_1.Quadrangle(algo=smeshBuilder.QUADRANGLE)
-isDone = Mesh_1.Compute()
-FixNodes = Mesh_1.GroupOnGeom(Fix,'FixNodes',SMESH.NODE)
-FixEdges = Mesh_1.GroupOnGeom(Fix,'FixEdges',SMESH.EDGE)
-ForceNodes = Mesh_1.GroupOnGeom(SurfaceForce,'ForceNodes',SMESH.NODE)
-ForceEdges = Mesh_1.GroupOnGeom(SurfaceForce,'ForceEdges',SMESH.EDGE)
-PressureLoad = Mesh_1.CreateEmptyGroup( SMESH.FACE, 'PressureLoad' )
-nbAdd = PressureLoad.AddFrom( Mesh_1.GetMesh() )
-ShellElements = Mesh_1.CreateEmptyGroup( SMESH.FACE, 'ShellElements' )
-nbAdd = ShellElements.AddFrom( Mesh_1.GetMesh() )
-smesh.SetName(Mesh_1, 'Mesh_1')
+Skin = smesh.Mesh(Skin)
+Regular_1D_Skin = Skin.Segment()
+Local_Length_Skin = Regular_1D_Skin.LocalLength(skinMeshSize,None,1e-07)
+Quadrangle_2D = Skin.Quadrangle(algo=smeshBuilder.QUADRANGLE)
+isDone = Skin.Compute()
+FixNodes = Skin.GroupOnGeom(Fix,'FixNodes',SMESH.NODE)
+FixEdges = Skin.GroupOnGeom(Fix,'FixEdges',SMESH.EDGE)
+ForceNodes = Skin.GroupOnGeom(SurfaceForce,'ForceNodes',SMESH.NODE)
+ForceEdges = Skin.GroupOnGeom(SurfaceForce,'ForceEdges',SMESH.EDGE)
+PressureLoad = Skin.CreateEmptyGroup( SMESH.FACE, 'PressureLoad' )
+nbAdd = PressureLoad.AddFrom( Skin.GetMesh() )
+ShellElements = Skin.CreateEmptyGroup( SMESH.FACE, 'ShellElements' )
+nbAdd = ShellElements.AddFrom( Skin.GetMesh() )
+smesh.SetName(Skin, 'Skin')
 
 # Master Node
-nodeID = Mesh_1.AddNode( 0, 0, length )
-MNode = Mesh_1.CreateEmptyGroup( SMESH.NODE, 'MNode' )
+nodeID = Skin.AddNode( 0, 0, length )
+MNode = Skin.CreateEmptyGroup( SMESH.NODE, 'MNode' )
 nbAdd = MNode.Add( [ nodeID ] )
 
-nStringers = 36
 # StringerMesh
-Regular_1D_1_1 = smesh.CreateHypothesis( "Regular_1D" )
-Quadrangle_2D_2_1 = smesh.CreateHypothesis( "Quadrangle_2D" )
-Mesh_2 = smesh.Mesh(Stringer)
-status = Mesh_2.AddHypothesis(Local_Length_1)
-Regular_1D_1_2 = Mesh_2.Segment()
-Quadrangle_2D_2_2 = Mesh_2.Quadrangle(algo=smeshBuilder.QUADRANGLE)
-isDone = Mesh_2.Compute()
-StringerContact1_1 = Mesh_2.GroupOnGeom(StringerContact1,'StringerContact1',SMESH.FACE)
-StringerContact2_1 = Mesh_2.GroupOnGeom(StringerContact2,'StringerContact2',SMESH.FACE)
-StringerContact1_2 = Mesh_2.GroupOnGeom(StringerContact1,'StringerContact1',SMESH.NODE)
-StringerContact2_2 = Mesh_2.GroupOnGeom(StringerContact2,'StringerContact2',SMESH.NODE)
-StringerContactNodes = Mesh_2.GetMesh().UnionListOfGroups([ StringerContact1_2, StringerContact2_2 ], 'StringerContactNodes' )
-StringeContactElements = Mesh_2.GetMesh().UnionListOfGroups([ StringerContact1_1, StringerContact2_1 ], 'StringeContactElements' )
-Mesh_2.RemoveGroup(StringerContact1_1)
-Mesh_2.RemoveGroup(StringerContact2_1)
-Mesh_2.RemoveGroup(StringerContact1_2)
-Mesh_2.RemoveGroup(StringerContact2_2)
+Stringer = smesh.Mesh(Stringer)
+Regular_1D_Stringer = Stringer.Segment()
+Local_Length_Stringer = Regular_1D_Stringer.LocalLength(stringerMeshSize,None,1e-07)
+Quadrangle_2D_Stringer = Stringer.Quadrangle(algo=smeshBuilder.QUADRANGLE)
+isDone = Stringer.Compute()
+StringerContactNodes = Stringer.GroupOnGeom(StringerContact,
+                            'StringerContactNodes',SMESH.NODE)
+StringerContactEdges = Stringer.GroupOnGeom(StringerContact,
+                            'StringerContactEdges',SMESH.EDGE)
+StringerContactElements = Stringer.GroupOnGeom(StringerContact,
+                            'StringerContactElements',SMESH.FACE)
+StringerElements = Stringer.CreateEmptyGroup( SMESH.FACE, 'StringerElements' )
+nbAdd = StringerElements.AddFrom( Stringer.GetMesh() )
 
 angle = np.radians(360/nStringers)
-StringerMeshes = [Mesh_2]
+StringerMeshes = [Stringer]
 for i in range(1, nStringers):
-    StringerMeshes.append(Mesh_2.RotateObjectMakeMesh( Mesh_2, 
+    StringerMeshes.append(Stringer.RotateObjectMakeMesh( Stringer, 
         SMESH.AxisStruct( 0, 0, 0, 0, 0, 1 ), angle*i , 1, 'Stringer%d' %(i+1)))
 
+Stringers = smesh.Concatenate(StringerMeshes, 1, 1, 1e-05,False,'Stringers')
+
+# FrameMesh
+Frame = smesh.Mesh(Frame)
+Regular_1D_Frame = Frame.Segment()
+Local_Length_Frame = Regular_1D_Frame.LocalLength(frameMeshSize,None,1e-07)
+Quadrangle_2D_Frame = Frame.Quadrangle(algo=smeshBuilder.QUAD_MA_PROJ)
+isDone = Frame.Compute()
+FrameContactNodes = Frame.GroupOnGeom(FrameContact,
+                            'FrameContactNodes',SMESH.NODE)
+FrameContactEdges = Frame.GroupOnGeom(FrameContact,
+                            'FrameContactEdges',SMESH.EDGE)
+FrameContactElements = Frame.GroupOnGeom(FrameContact,
+                            'FrameContactElements',SMESH.FACE)
+FrameElements = Frame.CreateEmptyGroup( SMESH.FACE, 'FrameElements' )
+nbAdd = FrameElements.AddFrom( Frame.GetMesh() )
+
+FrameMeshes = [Frame]
+increment = length / nFrames
+for i in range(1, nFrames+1):
+    FrameMeshes.append(Frame.TranslateObjectMakeMesh( Frame, 
+                [ 0, 0, i*increment ], 1, 'Frame_translated' ))
+
+Frames = smesh.Concatenate(FrameMeshes, 1, 1, 1e-05,False, 'Frames')
 
 try:
-  Mesh_1.ExportMED( r''+ExportPATH+'linearMesh.med', 0, SMESH.MED_V2_2, 1, None ,1)
+  Skin.ExportMED( r''+ExportPATH+'skin.med', 0, SMESH.MED_V2_2, 1, None ,1)
+  Stringers.ExportMED( r''+ExportPATH+'stringers.med', 0, SMESH.MED_V2_2, 1, None ,1)
+  Frames.ExportMED( r''+ExportPATH+'frames.med', 0, SMESH.MED_V2_2, 1, None ,1)
 except:
   print 'ExportToMEDX() failed. Invalid file name?'
 

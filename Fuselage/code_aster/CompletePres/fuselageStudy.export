@@ -1,0 +1,19 @@
+P actions make_etude
+P memory_limit 1024
+P mode interactif
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P ncpus 1
+P time_limit 120
+P version stable
+A args 
+A memjeveux 900
+A tpmax 600
+F comm fuselage.comm D  1
+F mmed skin.med D  20
+F mmed stringers.med D  21
+F mmed frames.med D  22
+F mess fuselageStudy.mess R  6
+F resu fuselageStudy.resu R  8
+F rmed fuselageStudy.rmed R  80
+R base fuselageStudy.base RC 0
