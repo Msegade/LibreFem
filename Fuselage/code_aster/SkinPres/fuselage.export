@@ -1,0 +1,16 @@
+P actions make_etude
+P version stable
+A args 
+A memjeveux 512
+A tpmax 600
+P time_limit 120
+P memory_limit 1024
+P ncpus 1
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+
+F comm fuselage.comm D  1
+F mmed Mesh.med D  20
+F mess fuselage.mess R  6
+R base fuselage.base RC 0
+

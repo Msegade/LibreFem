@@ -1,0 +1,42 @@
+POURSUITE();
+#
+# Improve results
+# ----------------
+res1 = CALC_CHAMP(reuse=res1,
+                    RESULTAT=res1,
+                    CONTRAINTE=('SIGM_ELNO',),
+                    CRITERES=('SIEQ_ELNO',)
+);
+
+# Convert the displacements to cylindrical coordinates
+
+res2 = MODI_REPERE( RESULTAT=res1,
+                    MODI_CHAM=_F(
+                                 NOM_CHAM='DEPL',
+                                 NOM_CMP=('DX','DY','DZ'),
+                                 TYPE_CHAM='VECT_3D',
+                    ),
+                    REPERE='CYLINDRIQUE',
+                    AFFE = _F( ORIGINE = (0.0, 0.0, 0.0),
+                               AXE_Z =   (0.0, 0.0, 1.0)),
+);
+
+# Print results
+# -------------
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 80,
+          RESU=_F(RESULTAT=res1,
+                  NOM_CHAM=('DEPL', 'SIEQ_ELNO', 'SIGM_ELNO' ),
+                  GROUP_MA = 'ShellElements',
+          )
+);
+
+# Results in cylindrical coordinates
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 81,
+          RESU=_F(RESULTAT=res2,
+                  NOM_CHAM=('DEPL', ),));
+
+FIN();
