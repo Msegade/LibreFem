@@ -1,0 +1,26 @@
+TITRE
+% SPRINGS
+FINSF
+COOR_3D             % 3 NOEUDS
+%  NOEUD      X         Y          Z
+    RP1     0.          0.        0.
+    RP2     1.          0.        0.
+    RP3     2.          0.        0.
+    RP4     3.          0.        0.
+    RP5     4.          0.        0.
+%
+FINSF
+
+SEG2
+   K1    RP1   RP2
+   K2    RP2   RP3
+   K3    RP3   RP4
+   K4    RP4   RP5
+FINSF
+
+
+GROUP_MA
+    SPRINGS K1 K2 K3 K4 
+FINSF   
+
+FIN

@@ -1,0 +1,19 @@
+P actions make_etude
+P version stable
+A args 
+A memjeveux 512
+A tpmax 600
+P time_limit 120
+P memory_limit 1024
+P ncpus 1
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+
+F comm frame.comm D  1
+F mmed frame.med D  20
+F mess frame.mess R  6
+F resu frame.resu R  8
+F mmed frame.mmed R  71
+F rmed frame.rmed R  80
+R base frame.base RC 0
+

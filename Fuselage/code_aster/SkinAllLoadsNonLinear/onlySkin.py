@@ -62,7 +62,7 @@ import  SMESH, SALOMEDS
 from salome.smesh import smeshBuilder
 
 # Parameters
-meshSize = 0.1
+meshSize = 0.07
 
 smesh = smeshBuilder.New(theStudy)
 Mesh_1 = smesh.Mesh(Skin)

@@ -1,4 +1,7 @@
 all: displacements.png
+mesh: linearMesh.med
+solve: fuselageStudy.rmed
+post: displacements.png
 
 linearMesh.med: onlySkin.py
 	python $<

@@ -63,7 +63,8 @@ cara=AFFE_CARA_ELEM( MODELE=modl,
                      COQUE=(_F( 
                             GROUP_MA = 'ShellElements', 
                             EPAIS=0.002,
-                            VECTEUR=(0.0,0.0,1.0)
+                            VECTEUR=(0.0,0.0,1.0),
+                            COEF_RIGI_DRZ = 0.001,
                      )),
                      DISCRET=(_F(CARA='M_TR_D_N',
                                    GROUP_MA='MNode',
@@ -158,8 +159,8 @@ res1=STAT_NON_LINE(
               COMPORTEMENT=_F(
                               GROUP_MA='ShellElements',
                               RELATION='ELAS',
-                              DEFORMATION='PETIT_REAC',
-                              #DEFORMATION='GROT_GDEP',
+                              #DEFORMATION='PETIT_REAC',
+                              DEFORMATION='GROT_GDEP',
               ),
               INCREMENT = _F(
                              LIST_INST = listAuto
@@ -170,7 +171,7 @@ res1=STAT_NON_LINE(
                           REAC_ITER = 1 
               ),
               CONVERGENCE = _F( 
-                                RESI_GLOB_RELA = 1e-6,
+                                RESI_GLOB_RELA = 1e-3,
                                 ITER_GLOB_MAXI = 30
               ),
         

@@ -1,0 +1,33 @@
+P actions make_etude
+P consbtc oui
+P soumbtc oui
+P version testing
+P lang en
+P debug nodebug
+P mode interactif
+P ncpus 1
+P mpi_nbcpu 1
+P mpi_nbnoeud 1
+P classe 
+P depart 
+P after_job 
+P distrib 
+P exectool 
+P multiple 
+P nomjob New
+A args 
+A memjeveux 64.0
+A tpmax 900
+P memjob 524288
+P tpsjob 15
+P nbmaxnook 5
+P cpresok RESNOOK
+P only_nook 
+P facmtps 1
+P corefilesize unlimited
+F comm ./springs.comm D 1
+F mail ./springs.mail D 20
+F mess ./springs.mess R 6
+F resu ./springs.resu R 8
+F base ./springs.base RC 0
+F csv  ./stiffness.csv  R 32

@@ -211,7 +211,8 @@ IMPR_RESU(FORMAT='MED',
                             'SIGM_ELNO' 
                   ),),
                 _F(RESULTAT=sol_up,
-                  NOM_CHAM=( 'SIEQ_ELNO',)
+                  NOM_CHAM=( 'SIEQ_ELNO',),
+                  GROUP_MA=('ShellElements'),
                   ),
                 _F(RESULTAT=sol_down,
                   NOM_CHAM=( 'SIEQ_ELNO', )

@@ -1,0 +1,78 @@
+# Execution Command by command for printing matrices
+DEBUT(PAR_LOT='NON')
+#DEBUT()
+
+MA=LIRE_MAILLAGE( )
+
+# Discret elements
+MO=AFFE_MODELE(  MAILLAGE=MA,AFFE=(
+       _F( GROUP_MA = 'SPRINGS',    PHENOMENE = 'MECANIQUE',  MODELISATION = 'DIS_T',),
+));
+
+# Boundary conditions
+CONLIM=AFFE_CHAR_MECA(  MODELE=MO,
+                        DDL_IMPO=(_F(  NOEUD = 'RP1',   DX = 0),
+                                  _F(  NOEUD ='RP5',    DX = 0.002),
+                                  _F(  TOUT='OUI', DY = 0, DZ = 0),
+                                    
+                      ),    
+);
+
+# Problem parameters
+k = 200
+
+# Mechanical charactersitics of the discret elements
+CARELEM=AFFE_CARA_ELEM(   MODELE=MO,
+                          DISCRET=(
+                            _F(  CARA = 'K_T_D_L',   
+                                 REPERE = 'LOCAL',
+                                 GROUP_MA = 'SPRINGS',
+                                 VALE = (k, 0,  0.,  ), 
+                            ),
+),);
+
+
+
+MATELE_1=CALC_MATR_ELEM(MODELE=MO,     
+                        CHARGE=CONLIM,
+                        CARA_ELEM=CARELEM,
+                        OPTION='RIGI_MECA' )
+
+VEL=CALC_VECT_ELEM( CHARGE=CONLIM,
+                    OPTION='CHAR_MECA' )
+
+NU=NUME_DDL( MATR_RIGI=MATELE_1 )
+
+MATASS=ASSE_MATRICE( MATR_ELEM=MATELE_1, 
+                     NUME_DDL=NU )
+
+
+# Print matrices
+###############################################################################
+import numpy as np
+stiffness = MATASS.EXTR_MATR()
+np.savetxt('fort.32', stiffness, delimiter='\t')
+###############################################################################
+
+VECASS=ASSE_VECTEUR( VECT_ELEM=VEL,  
+                     NUME_DDL=NU )
+
+MATASS=FACTORISER( reuse=MATASS,  
+                   MATR_ASSE=MATASS )
+
+VECASS=RESOUDRE(reuse=VECASS, 
+                MATR=MATASS,     
+                CHAM_NO=VECASS,
+                ALGORITHME='CG')
+
+  
+  
+# Print results
+IMPR_RESU(RESU=_F(
+                  CHAM_GD=VECASS,
+),);
+
+
+
+FIN();
+#

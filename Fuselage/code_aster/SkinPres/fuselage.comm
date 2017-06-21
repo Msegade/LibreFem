@@ -101,7 +101,10 @@ res2 = MODI_REPERE( RESULTAT=res1,
 IMPR_RESU(FORMAT='MED',
           UNITE = 80,
           RESU=_F(RESULTAT=res1,
-                  NOM_CHAM=('DEPL', 'SIEQ_ELNO', 'SIGM_ELNO' ),));
+                  NOM_CHAM=('DEPL', 'SIEQ_ELNO', 'SIGM_ELNO' ),
+                  GROUP_MA = 'ShellElements',
+          )
+);
 
 # Results in cylindrical coordinates
 
