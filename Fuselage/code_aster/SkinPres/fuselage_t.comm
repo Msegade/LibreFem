@@ -21,14 +21,14 @@ modl=AFFE_MODELE( MAILLAGE=mesh,
                  AFFE=_F( 
                         GROUP_MA = 'ShellElements',
                         PHENOMENE = 'MECANIQUE',
-                        MODELISATION = 'DKT'
+                        MODELISATION = '{{modelization}}'
                   ) 
 );
 
 # Material definition
 # ----------------------
 
-al2024t4=DEFI_MATERIAU(ELAS=_F( E = 73e6,NU = 0.33,) );
+al2024t4=DEFI_MATERIAU(ELAS=_F( E = {{E}},NU = {{nu}}, RHO = {{rho}}) );
 
 # Assignment of the material on the mesh
 # ---------------------------------------
@@ -41,37 +41,40 @@ chmat=AFFE_MATERIAU(MAILLAGE=mesh,
 # -------------------------------------
 
 sect=AFFE_CARA_ELEM( MODELE=modl,
-                     COQUE=(_F( GROUP_MA = 'ShellElements', EPAIS=0.002)));
+                     COQUE=(_F( GROUP_MA = 'ShellElements', EPAIS={{thickness}})));
                                 
 # Boundary conditions
 # -------------------------------------
 
-# Rotations and longitudinal displacement
-clim=AFFE_CHAR_MECA( MODELE=modl,DDL_IMPO=(
-                   _F( GROUP_NO = 'FixNodes', DZ = 0., 
-                                              DRX = 0.0, DRY = 0, DRZ = 0 
-                     ),)
+# Rotations and longitudinal displacement, and restrict tangential 
+# displacements to allow only radial
+clim=AFFE_CHAR_MECA( MODELE=modl,
+                    DDL_IMPO=(
+                        _F( GROUP_NO = 'FixNodes', 
+                                       DZ = 0., 
+                                       DRX = 0.0, DRY = 0, DRZ = 0 
+                          ),
+                    ),
+                    ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0),
 );
-# Allow only radial displacements
-rdisp=AFFE_CHAR_MECA( MODELE=modl,
-                        ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0));
-
 
 
 # Loads definition
 # -------------------------
 
-charg=AFFE_CHAR_MECA( MODELE=modl,
-          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES=50),);
+press=AFFE_CHAR_MECA( MODELE=modl,
+          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES={{pres}}),);
 
 # Resolution
 # ----------
 
-res1=MECA_STATIQUE(        MODELE=modl,     CHAM_MATER=chmat,
-            CARA_ELEM=sect, EXCIT=( 
-                                    _F( CHARGE = charg),
+res1=MECA_STATIQUE( MODELE=modl,     
+                    CHAM_MATER=chmat,
+                    CARA_ELEM=sect, 
+                    EXCIT=( 
+                                    _F( CHARGE = press),
                                     _F( CHARGE = clim),
-                                    _F( CHARGE = rdisp))
+                           )
 );
 
 

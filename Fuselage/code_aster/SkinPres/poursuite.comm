@@ -5,7 +5,8 @@ POURSUITE();
 res1 = CALC_CHAMP(reuse=res1,
                     RESULTAT=res1,
                     CONTRAINTE=('SIGM_ELNO',),
-                    CRITERES=('SIEQ_ELNO',)
+                    CRITERES=('SIEQ_ELNO',),
+                    FORCE=('REAC_NODA'),
 );
 
 # Convert the displacements to cylindrical coordinates
@@ -21,13 +22,64 @@ res2 = MODI_REPERE( RESULTAT=res1,
                                AXE_Z =   (0.0, 0.0, 1.0)),
 );
 
+# Mass of the model
+mass=POST_ELEM(
+            RESULTAT =res1,
+            MODELE=modl,
+            MASS_INER=_F(TOUT='OUI'),
+            TITRE= 'Mass',
+);
+
+IMPR_TABLE ( TABLE=mass, FORMAT_R='1PE12.3',)
+
+
+# Sum of the reactions 
+sum_reac= POST_RELEVE_T(
+            ACTION=_F(
+                INTITULE='Reaction Sum',
+                GROUP_NO='FixNodes',
+                RESULTAT=res1,
+                NOM_CHAM='REAC_NODA',
+                TOUT_ORDRE='OUI',
+                RESULTANTE=('DX','DY','DZ'),
+                MOMENT=('DRX','DRY','DRZ'),
+                POINT=(0, 0, 0),
+                OPERATION='EXTRACTION',),
+);
+IMPR_TABLE (TABLE=sum_reac,)
+
+# Maximun values of interest
+IMPR_RESU(
+    MODELE=modl,
+    FORMAT='RESULTAT',
+    RESU=(
+        _F(
+        	RESULTAT=res1,
+            NOM_CHAM='DEPL',
+            NOM_CMP='DZ',
+            GROUP_MA=('ShellElements',),
+            FORMAT_R='1PE12.3',
+            VALE_MAX='OUI',VALE_MIN='OUI',
+        ),
+        _F(
+        	RESULTAT=res1,
+            NOM_CHAM='SIEQ_ELNO',
+            NOM_CMP='VMIS',
+            GROUP_MA=('ShellElements',),
+            FORMAT_R='1PE12.3',
+            VALE_MAX='OUI',VALE_MIN='OUI',
+        ),
+    ),
+);
+
+
 # Print results
 # -------------
 
 IMPR_RESU(FORMAT='MED',
           UNITE = 80,
           RESU=_F(RESULTAT=res1,
-                  NOM_CHAM=('DEPL', 'SIEQ_ELNO', 'SIGM_ELNO' ),
+                  NOM_CHAM=('DEPL', 'SIEQ_ELNO', 'SIGM_ELNO', 'REAC_NODA' ),
                   GROUP_MA = 'ShellElements',
           )
 );

@@ -33,9 +33,9 @@ import SALOMEDS
 geompy = geomBuilder.New(theStudy)
 
 # Parameters
-Diameter = 3.8
+Diameter = {{Diameter}}
 R = Diameter/2.0
-length = 6
+length = {{length}}
 
 O = geompy.MakeVertex(0, 0, 0)
 OX = geompy.MakeVectorDXDYDZ(1, 0, 0)
@@ -61,7 +61,7 @@ import  SMESH, SALOMEDS
 from salome.smesh import smeshBuilder
 
 # Parameters
-meshSize = 0.1
+meshSize = {{meshSize}}
 
 smesh = smeshBuilder.New(theStudy)
 Mesh_1 = smesh.Mesh(Skin)

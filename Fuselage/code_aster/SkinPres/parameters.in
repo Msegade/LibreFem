@@ -1,0 +1,9 @@
+Diameter 3.8 
+length 6 
+meshSize 0.2 
+modelization DKT
+E 73e6 
+nu 0.33
+rho 2.78
+pres 100
+thickness 0.002 
