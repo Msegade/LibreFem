@@ -13,14 +13,9 @@ ExportPATH=currentpath
 
 import sys
 import salome
-import numpy as np
 
 salome.salome_init()
 theStudy = salome.myStudy
-
-import salome_notebook
-notebook = salome_notebook.NoteBook(theStudy)
-sys.path.insert( 0, r'/home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage')
 
 ###
 ### GEOM component
@@ -29,55 +24,28 @@ sys.path.insert( 0, r'/home/miguel/Documents/MIEMA/Trabajo/LibreFem/Fuselage')
 import GEOM
 from salome.geom import geomBuilder
 import math
+import numpy as np
 import SALOMEDS
 
 geompy = geomBuilder.New(theStudy)
 
 # Parameters
-Diameter = 3.8
+Diameter = {{Diameter}}
 R = Diameter/2.0
-length = 6.0
-nStringers = 36
-nFrames = 6
+length = {{length}}
 
 O = geompy.MakeVertex(0, 0, 0)
 OX = geompy.MakeVectorDXDYDZ(1, 0, 0)
 OY = geompy.MakeVectorDXDYDZ(0, 1, 0)
 OZ = geompy.MakeVectorDXDYDZ(0, 0, 1)
 
-# Skin
-Circle = geompy.MakeCircle(O, OZ, R)
-Skin = geompy.MakePrismVecH(Circle, OZ, length)
+Skin = geompy.ImportSTEP(ExportPATH+'Skin.step', False, True)
 [Fix,SurfaceForce,Edge_3] = geompy.ExtractShapes(Skin, geompy.ShapeType["EDGE"], True)
-
-# Frame
-Extrusion_1_vertex_4 = geompy.GetSubShape(Skin, [4])
-Plane_1 = geompy.MakePlane(Extrusion_1_vertex_4, OY, 2)
-sk = geompy.Sketcher2D()
-sk.addPoint(0.040000, 0.000000)
-sk.addSegmentAbsolute(0.020000, 0.000000)
-sk.addSegmentAbsolute(0.020000, -0.060000)
-sk.addSegmentAbsolute(0.000000, -0.060000)
-Sketch_1 = sk.wire(Plane_1)
-Frame = geompy.MakeRevolution(Sketch_1, OZ, 360*math.pi/180.0)
-Frame.SetColor(SALOMEDS.Color(1,0,0))
+Frame = geompy.ImportSTEP(ExportPATH+'Frame.step', False, True)
 [face_1,face_2,FrameContact] = geompy.ExtractShapes(Frame, geompy.ShapeType["FACE"], True)
-
-# Stringer
-geomObj_3 = geompy.MakeMarker(0, 0, 0, 1, 0, 0, 0, 1, 0)
-sk = geompy.Sketcher2D()
-sk.addPoint(-0.030000, -1.900000)
-sk.addSegmentAbsolute(-0.010000, -1.900000)
-sk.addSegmentAbsolute(-0.010000, -1.870000)
-sk.addSegmentAbsolute(0.010000, -1.870000)
-sk.addSegmentAbsolute(0.010000, -1.900000)
-sk.addSegmentAbsolute(0.030000, -1.900000)
-Sketch_2 = sk.wire(geomObj_3)
-Stringer = geompy.MakePrismVecH(Sketch_2, OZ, 6)
-Stringer.SetColor(SALOMEDS.Color(0,1,0))
+Stringer = geompy.ImportSTEP(ExportPATH+'Stringer.step', False, True)
 [StringerContact1,face_2, face_3, face_4, StringerContact2] = \
         geompy.ExtractShapes(Stringer, geompy.ShapeType["FACE"], True)
-
 StringerContact = geompy.CreateGroup(Stringer, geompy.ShapeType["FACE"])
 id1 = geompy.GetSubShapeID(Stringer, StringerContact1)
 id2 = geompy.GetSubShapeID(Stringer, StringerContact2)
@@ -87,7 +55,6 @@ geompy.addToStudy( O, 'O' )
 geompy.addToStudy( OX, 'OX' )
 geompy.addToStudy( OY, 'OY' )
 geompy.addToStudy( OZ, 'OZ' )
-geompy.addToStudy( Circle, 'Circle' )
 geompy.addToStudy( Skin, 'Skin' )
 geompy.addToStudyInFather( Skin, Fix, 'Fix' )
 geompy.addToStudyInFather( Skin, SurfaceForce, 'SurfaceForce' )
@@ -105,9 +72,12 @@ import  SMESH, SALOMEDS
 from salome.smesh import smeshBuilder
 
 # Parameters
-frameMeshSize = 0.1
-stringerMeshSize = 0.1
-skinMeshSize = 0.07
+nStringers = {{nStringers}}
+nFrames = {{nFrames}}
+frameMeshSize = {{frameMeshSize}}
+stringerMeshSize = {{stringerMeshSize}}
+skinMeshSize = {{skinMeshSize}}
+
 smesh = smeshBuilder.New(theStudy)
 
 # Skin Mesh 
@@ -178,9 +148,9 @@ for i in range(1, nFrames+1):
 Frames = smesh.Concatenate(FrameMeshes, 1, 1, 1e-05,False, 'Frames')
 
 try:
-  Skin.ExportMED( r''+ExportPATH+'skin.med', 0, SMESH.MED_V2_2, 1, None ,1)
-  Stringers.ExportMED( r''+ExportPATH+'stringers.med', 0, SMESH.MED_V2_2, 1, None ,1)
-  Frames.ExportMED( r''+ExportPATH+'frames.med', 0, SMESH.MED_V2_2, 1, None ,1)
+  Skin.ExportMED( r''+ExportPATH+'Skin.med', 0, SMESH.MED_V2_2, 1, None ,1)
+  Stringers.ExportMED( r''+ExportPATH+'Stringers.med', 0, SMESH.MED_V2_2, 1, None ,1)
+  Frames.ExportMED( r''+ExportPATH+'Frames.med', 0, SMESH.MED_V2_2, 1, None ,1)
 except:
   print 'ExportToMEDX() failed. Invalid file name?'
 

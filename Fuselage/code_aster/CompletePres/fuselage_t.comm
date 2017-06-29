@@ -53,17 +53,17 @@ modl=AFFE_MODELE( MAILLAGE=mesh,
                  _F( 
                         GROUP_MA = ('ShellElements','ForceEdges'),
                         PHENOMENE = 'MECANIQUE',
-                        MODELISATION = 'DKT'
+                        MODELISATION = {{modelization}}
                   ),
                  _F( 
                         GROUP_MA = ('StringerElements', 'StringerContactEdges'),
                         PHENOMENE = 'MECANIQUE',
-                        MODELISATION = 'DKT'
+                        MODELISATION = {{modelization}}
                   ),
                  _F( 
                         GROUP_MA = ('FrameElements', 'FrameContactEdges'),
                         PHENOMENE = 'MECANIQUE',
-                        MODELISATION = 'DKT'
+                        MODELISATION = {{modelization}}
                   ),
                  _F( 
                         GROUP_MA = 'MNode',
@@ -76,7 +76,7 @@ modl=AFFE_MODELE( MAILLAGE=mesh,
 # Material definition
 # ----------------------
 
-al2024t4=DEFI_MATERIAU(ELAS=_F( E = 73e6,NU = 0.33,) );
+al2024t4=DEFI_MATERIAU(ELAS=_F( E = {{E}},NU = {{nu}},) );
 
 # Assignment of the material on the mesh
 # ---------------------------------------
@@ -100,7 +100,7 @@ cara=AFFE_CARA_ELEM( MODELE=modl,
                                         'StringerElements',
                                         'FrameElements'
                             ), 
-                            EPAIS=0.002,
+                            EPAIS={{thickness}},
                             VECTEUR=(1.0,1.0,1.0)
                      )),
                      DISCRET=(_F(CARA='M_TR_D_N',
@@ -114,19 +114,18 @@ cara=AFFE_CARA_ELEM( MODELE=modl,
 # Boundary conditions
 # -------------------------------------
 
-# Rotations and longitudinal displacement
+# Rotations and longitudinal displacement, and restrict tangential 
+# displacements to allow only radial
 clim=AFFE_CHAR_MECA( MODELE=modl,
                     DDL_IMPO=(
                    _F( 
                             GROUP_NO = 'FixNodes', 
                             DZ = 0., 
                             DRX = 0.0, DRY = 0, DRZ = 0 
+                            ),
                     ),
-                )
+                    ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0),
 );
-# Allow only radial displacements
-rdisp=AFFE_CHAR_MECA( MODELE=modl,
-                        ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0));
 
 # Union of the three meshes
 tie=AFFE_CHAR_MECA(MODELE=modl,
@@ -149,11 +148,11 @@ tie=AFFE_CHAR_MECA(MODELE=modl,
 # -------------------------
 
 press=AFFE_CHAR_MECA( MODELE=modl,
-          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES=50),);
+          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES={{press}}),);
 
 
-FX=200; FY=-250; FZ=-300;
-MX=500; MY=-500; MZ=-600;
+FX={{FX}}; FY={{FY}}; FZ={{FZ}};
+MX={{MX}}; MY={{MY}}; MZ={{MZ}};
 
 pload=AFFE_CHAR_MECA( MODELE=modl,
                         LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
@@ -171,54 +170,10 @@ res1=MECA_STATIQUE( MODELE=modl,
                     CARA_ELEM=cara, EXCIT=( 
                                     _F( CHARGE = tie),
                                     _F( CHARGE = clim),
-                                    _F( CHARGE = rdisp),
                                     _F( CHARGE = press),
                                     _F( CHARGE = pload),
                     )
 );
 
-# Improve results
-# ----------------
-res1 = CALC_CHAMP(reuse=res1,
-                    RESULTAT=res1,
-                    CONTRAINTE=('SIGM_ELNO',),
-                    CRITERES=('SIEQ_ELNO',)
-);
-
-sol_up = POST_CHAMP ( RESULTAT=res1,
-                    EXTR_COQUE = _F(
-                        NOM_CHAM = 'SIEQ_ELNO',
-                        NUME_COUCHE = 1,
-                        NIVE_COUCHE = 'SUP')
-                );
-sol_down = POST_CHAMP ( RESULTAT=res1,
-                        EXTR_COQUE = _F(
-                            NOM_CHAM = 'SIEQ_ELNO',
-                            NUME_COUCHE = 1,
-                            NIVE_COUCHE = 'INF')
-                );
-                        
-
-# Print results
-# -------------
-
-IMPR_RESU(FORMAT='MED',
-          UNITE = 80,
-          RESU=(
-                _F(RESULTAT=res1,
-                  NOM_CHAM=('DEPL', 
-                            'SIEQ_ELNO', 
-                            'SIGM_ELNO' 
-                  ),),
-                _F(RESULTAT=sol_up,
-                  NOM_CHAM=( 'SIEQ_ELNO',),
-                  GROUP_MA=('ShellElements'),
-                  ),
-                _F(RESULTAT=sol_down,
-                  NOM_CHAM=( 'SIEQ_ELNO', )
-                  ),
-            )
-);
-
-
 FIN();
+
