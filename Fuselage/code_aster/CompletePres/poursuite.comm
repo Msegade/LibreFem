@@ -5,7 +5,8 @@ POURSUITE();
 res1 = CALC_CHAMP(reuse=res1,
                     RESULTAT=res1,
                     CONTRAINTE=('SIGM_ELNO',),
-                    CRITERES=('SIEQ_ELNO',)
+                    CRITERES=('SIEQ_ELNO',),
+                    FORCE=('REAC_NODA',)
 );
 
 sol_up = POST_CHAMP ( RESULTAT=res1,
@@ -57,7 +58,7 @@ IMPR_RESU(
         	RESULTAT=res1,
             NOM_CHAM='DEPL',
             NOM_CMP='DZ',
-            GROUP_MA=('ShellElements',),
+            GROUP_MA=('SkinElements',),
             FORMAT_R='1PE12.3',
             VALE_MAX='OUI',VALE_MIN='OUI',
         ),
@@ -65,7 +66,7 @@ IMPR_RESU(
         	RESULTAT=res1,
             NOM_CHAM='SIEQ_ELNO',
             NOM_CMP='VMIS',
-            GROUP_MA=('ShellElements',),
+            GROUP_MA=('SkinElements',),
             FORMAT_R='1PE12.3',
             VALE_MAX='OUI',VALE_MIN='OUI',
         ),
@@ -85,7 +86,7 @@ IMPR_RESU(FORMAT='MED',
                   ),),
                 _F(RESULTAT=sol_up,
                   NOM_CHAM=( 'SIEQ_ELNO',),
-                  GROUP_MA=('ShellElements'),
+                  GROUP_MA=('SkinElements'),
                   ),
                 _F(RESULTAT=sol_down,
                   NOM_CHAM=( 'SIEQ_ELNO', )

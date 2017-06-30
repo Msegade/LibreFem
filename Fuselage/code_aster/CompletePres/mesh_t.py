@@ -41,8 +41,20 @@ OZ = geompy.MakeVectorDXDYDZ(0, 0, 1)
 
 Skin = geompy.ImportSTEP(ExportPATH+'Skin.step', False, True)
 [Fix,SurfaceForce,Edge_3] = geompy.ExtractShapes(Skin, geompy.ShapeType["EDGE"], True)
+
+# Frame import and cut
 Frame = geompy.ImportSTEP(ExportPATH+'Frame.step', False, True)
-[face_1,face_2,FrameContact] = geompy.ExtractShapes(Frame, geompy.ShapeType["FACE"], True)
+# Cut by a plane to avoid problems during meshing
+Plane_1 = geompy.MakePlane(O, OY, Diameter*2)
+Frame = geompy.MakePartition([Frame], [Plane_1], [], [], geompy.ShapeType["SHELL"], 0, [], 0)
+[FrameContact1,face_1,face_2, face_3, face_4, FrameContact2] = \
+            geompy.ExtractShapes(Frame, geompy.ShapeType["FACE"], True)
+FrameContact = geompy.CreateGroup(Frame, geompy.ShapeType["FACE"])
+id1 = geompy.GetSubShapeID(Frame, FrameContact1)
+id2 = geompy.GetSubShapeID(Frame, FrameContact2)
+geompy.UnionIDs(FrameContact, [id1, id2])
+
+# Stringer 
 Stringer = geompy.ImportSTEP(ExportPATH+'Stringer.step', False, True)
 [StringerContact1,face_2, face_3, face_4, StringerContact2] = \
         geompy.ExtractShapes(Stringer, geompy.ShapeType["FACE"], True)
@@ -92,8 +104,8 @@ ForceNodes = Skin.GroupOnGeom(SurfaceForce,'ForceNodes',SMESH.NODE)
 ForceEdges = Skin.GroupOnGeom(SurfaceForce,'ForceEdges',SMESH.EDGE)
 PressureLoad = Skin.CreateEmptyGroup( SMESH.FACE, 'PressureLoad' )
 nbAdd = PressureLoad.AddFrom( Skin.GetMesh() )
-ShellElements = Skin.CreateEmptyGroup( SMESH.FACE, 'ShellElements' )
-nbAdd = ShellElements.AddFrom( Skin.GetMesh() )
+SkinElements = Skin.CreateEmptyGroup( SMESH.FACE, 'SkinElements' )
+nbAdd = SkinElements.AddFrom( Skin.GetMesh() )
 smesh.SetName(Skin, 'Skin')
 
 # Master Node
@@ -129,7 +141,9 @@ Frame = smesh.Mesh(Frame)
 Regular_1D_Frame = Frame.Segment()
 Local_Length_Frame = Regular_1D_Frame.LocalLength(frameMeshSize,None,1e-07)
 Quadrangle_2D_Frame = Frame.Quadrangle(algo=smeshBuilder.QUAD_MA_PROJ)
+#Quadrangle_2D_Frame = Frame.Quadrangle(algo=smeshBuilder.QUADRANGLE)
 isDone = Frame.Compute()
+#Frame.MergeNodes([[ 1, 4 ], [ 2, 3 ], [ 5, 6 ], [ 7, 8 ]], [])
 FrameContactNodes = Frame.GroupOnGeom(FrameContact,
                             'FrameContactNodes',SMESH.NODE)
 FrameContactEdges = Frame.GroupOnGeom(FrameContact,
@@ -140,7 +154,7 @@ FrameElements = Frame.CreateEmptyGroup( SMESH.FACE, 'FrameElements' )
 nbAdd = FrameElements.AddFrom( Frame.GetMesh() )
 
 FrameMeshes = [Frame]
-increment = length / nFrames
+increment = (length-0.04) / nFrames
 for i in range(1, nFrames+1):
     FrameMeshes.append(Frame.TranslateObjectMakeMesh( Frame, 
                 [ 0, 0, i*increment ], 1, 'Frame_translated' ))

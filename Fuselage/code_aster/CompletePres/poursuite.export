@@ -1,5 +1,5 @@
 P actions make_etude
-P version stable
+P version 13.2
 P time_limit 120
 P memory_limit 1024
 P ncpus 1

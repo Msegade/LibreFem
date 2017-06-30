@@ -33,10 +33,10 @@ meshinit = ASSE_MAILLAGE(
 # Reorient all normals so they are coherent
 # ----------------------------------------
 
-#meshinit=MODI_MAILLAGE(reuse=meshinit,
-#                      INFO=1,
-#                      MAILLAGE=meshinit,
-#                      ORIE_NORM_COQUE=_F(GROUP_MA=('ShellElements',),));
+meshinit=MODI_MAILLAGE(reuse=meshinit,
+                      INFO=1,
+                      MAILLAGE=meshinit,
+                      ORIE_NORM_COQUE=_F(GROUP_MA=('SkinElements',),));
 
 # Add a 1D element in the master node
 # ------------------------------------
@@ -45,23 +45,30 @@ mesh = CREA_MAILLAGE(MAILLAGE=meshinit,
                      CREA_POI1=_F(NOM_GROUP_MA='MNode',
                                   GROUP_NO='MNode',),);
 
+IMPR_RESU(FORMAT='MED',
+          UNITE = 70,
+          RESU=(
+                _F(MAILLAGE=mesh,),
+          ),
+);
+
 # DKT modelisation and DIS_TR for Mnode
 # ----------------------------------------
 
 modl=AFFE_MODELE( MAILLAGE=mesh,
                  AFFE=(
                  _F( 
-                        GROUP_MA = ('ShellElements','ForceEdges'),
+                        GROUP_MA = ('SkinElements','ForceEdges'),
                         PHENOMENE = 'MECANIQUE',
                         MODELISATION = {{modelization}}
                   ),
                  _F( 
-                        GROUP_MA = ('StringerElements', 'StringerContactEdges'),
+                        GROUP_MA = ('StringerElements',), 
                         PHENOMENE = 'MECANIQUE',
                         MODELISATION = {{modelization}}
                   ),
                  _F( 
-                        GROUP_MA = ('FrameElements', 'FrameContactEdges'),
+                        GROUP_MA = ('FrameElements'), 
                         PHENOMENE = 'MECANIQUE',
                         MODELISATION = {{modelization}}
                   ),
@@ -76,13 +83,13 @@ modl=AFFE_MODELE( MAILLAGE=mesh,
 # Material definition
 # ----------------------
 
-al2024t4=DEFI_MATERIAU(ELAS=_F( E = {{E}},NU = {{nu}},) );
+al2024t4=DEFI_MATERIAU(ELAS=_F( E = {{E}},NU = {{nu}}, RHO = {{rho}} ));
 
 # Assignment of the material on the mesh
 # ---------------------------------------
 
 chmat=AFFE_MATERIAU(MAILLAGE=mesh, 
-                    AFFE=_F( GROUP_MA = ('ShellElements', 
+                    AFFE=_F( GROUP_MA = ('SkinElements', 
                                          'StringerElements',
                                          'FrameElements'
                             ),
@@ -96,7 +103,7 @@ chmat=AFFE_MATERIAU(MAILLAGE=mesh,
 
 cara=AFFE_CARA_ELEM( MODELE=modl,
                      COQUE=(_F( 
-                            GROUP_MA = ('ShellElements', 
+                            GROUP_MA = ('SkinElements', 
                                         'StringerElements',
                                         'FrameElements'
                             ), 
@@ -131,7 +138,7 @@ clim=AFFE_CHAR_MECA( MODELE=modl,
 tie=AFFE_CHAR_MECA(MODELE=modl,
                    LIAISON_MAIL=(
                                 _F(
-                                    GROUP_MA_MAIT='ShellElements',
+                                    GROUP_MA_MAIT='SkinElements',
                                     GROUP_MA_ESCL=('StringerContactEdges',
                                                    'FrameContactEdges'
                                                   ),

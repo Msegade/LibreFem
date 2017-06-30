@@ -58,7 +58,7 @@ clean_geometry:
 	rm -f $(STEPFILES)
 
 clean_mesh:
-	rm -f $(MESHFILES)
+	rm -f $(MESHFILES) Complete.med
 
 clean_solve:
 	rm -rf $(TARGET).mess $(TARGET).base
