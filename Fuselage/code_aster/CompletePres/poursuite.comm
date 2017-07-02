@@ -1,4 +1,4 @@
-POURSUITE();
+POURSUITE(PAR_LOT='NON');
 
 # Improve results
 # ----------------
@@ -30,9 +30,30 @@ mass=POST_ELEM(
             MASS_INER=_F(TOUT='OUI'),
             TITRE= 'Mass',
 );
-
 IMPR_TABLE ( TABLE=mass, FORMAT_R='1PE12.3',)
+totalmass = mass.EXTR_TABLE().values()['MASSE'][0]
 
+# Maximum Von mises stresses
+vmises = POST_RELEVE_T(
+            ACTION=_F(
+                INTITULE='Maximun Vmises Stresses',
+                TOUT='OUI',
+                RESULTAT=res1,
+                NOM_CHAM='SIEQ_ELNO',
+                NOM_CMP='VMIS',
+                TOUT_ORDRE='OUI',
+                OPERATION='EXTREMA',),
+);
+IMPR_TABLE (TABLE=vmises,)
+maxvmises = max(vmises.EXTR_TABLE().values()['VALE'])
+
+import json
+results = {}
+results['mass'] = totalmass
+results['vmises'] = maxvmises
+s = json.dumps(results)
+with open('fort.31', 'w') as f:
+    f.write(s)
 
 # Sum of the reactions 
 sum_reac= POST_RELEVE_T(
@@ -50,6 +71,7 @@ sum_reac= POST_RELEVE_T(
 IMPR_TABLE (TABLE=sum_reac,)
 
 
+
 # Maximun values of interest
 IMPR_RESU(
     MODELE=modl,
@@ -59,7 +81,7 @@ IMPR_RESU(
         	RESULTAT=res1,
             NOM_CHAM='DEPL',
             NOM_CMP='DZ',
-            GROUP_MA=('SkinElements',),
+            #GROUP_MA=('SkinElements',),
             FORMAT_R='1PE12.3',
             VALE_MAX='OUI',VALE_MIN='OUI',
         ),
@@ -67,7 +89,7 @@ IMPR_RESU(
         	RESULTAT=res1,
             NOM_CHAM='SIEQ_ELNO',
             NOM_CMP='VMIS',
-            GROUP_MA=('SkinElements',),
+            #GROUP_MA=('SkinElements',),
             FORMAT_R='1PE12.3',
             VALE_MAX='OUI',VALE_MIN='OUI',
         ),
@@ -87,7 +109,7 @@ IMPR_RESU(FORMAT='MED',
                   ),),
                 _F(RESULTAT=sol_up,
                   NOM_CHAM=( 'SIEQ_ELNO',),
-                  GROUP_MA=('SkinElements'),
+                  #GROUP_MA=('SkinElements'),
                   ),
                 _F(RESULTAT=sol_down,
                   NOM_CHAM=( 'SIEQ_ELNO', )

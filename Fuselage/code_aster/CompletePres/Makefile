@@ -7,7 +7,7 @@ endif
 TARGET=fuselage
 MESHFILES=Skin.med  Stringers.med Frames.med
 STEPFILES=Skin.step Frame.step Stringer.step
-RESULTS=$(TARGET).resu $(TARGET).rmed 
+RESULTS=$(TARGET).resu $(TARGET).rmed results.json
 PARAMS=parameters.in
 
 init: geometry.py mesh.py $(TARGET).comm
@@ -59,7 +59,7 @@ clean_solve:
 	rm -rf $(TARGET).mess $(TARGET).base
 
 clean_results:
-	rm -f $(RESULTS) poursuite.mess
+	rm -f $(RESULTS) poursuite.mess results.json
 
 clean_tmpFiles:
 	rm -f $(TARGET).comm.tmp $(TARGET).export.tmp
