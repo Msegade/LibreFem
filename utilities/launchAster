@@ -1,0 +1,52 @@
+#!/bin/bash
+
+SHORT=d
+LONG=debug
+
+PARSED=$(getopt --options $SHORT --longoptions $LONG --name "$0" -- $@)
+if [[ $? -ne 0 ]]; then
+    exit 2
+fi
+
+eval set -- "$PARSED"
+
+debug=false
+
+while true; do
+    case "$1" in
+            -d|--debug)
+                debug=true
+                shift
+                ;;
+            --)
+                shift
+                break
+                ;;
+            *)
+                echo "Programming error"
+                exit 3
+                ;;
+    esac
+done
+
+target=$(basename -s .comm "$1")
+
+tmpcomm="$1".tmp
+tmpexport="$2".tmp
+
+cp "$1" $tmpcomm
+cp "$2" $tmpexport
+
+
+if $debug; then
+    sed -i -e '/^A\ args/ s/$/ --interact/' $tmpexport
+    sed -i -e "s/DEBUT()/DEBUT(PAR_LOT='NON')/" $tmpcomm
+    sed -i -e "s/POURSUITE()/POURSUITE(PAR_LOT='NON')/" $tmpcomm
+    sed -i -e 's/FIN();*//' $tmpcomm
+    sed -i -e "s/$target.comm/$target.comm.tmp/" $tmpexport
+fi
+
+as_run $tmpexport
+
+rm -f $tmpexport
+rm -f $tmpcomm

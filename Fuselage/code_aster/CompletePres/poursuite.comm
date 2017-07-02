@@ -49,6 +49,7 @@ sum_reac= POST_RELEVE_T(
 );
 IMPR_TABLE (TABLE=sum_reac,)
 
+
 # Maximun values of interest
 IMPR_RESU(
     MODELE=modl,

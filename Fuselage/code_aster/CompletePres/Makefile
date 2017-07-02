@@ -1,8 +1,7 @@
 SHELL:=/bin/bash
 
-CAFLAGS=
-ifeq ($(SILENT),True)
-	NOOUTPUT=> /dev/null 2>&1
+ifeq ($(DEBUG),True)
+	DBGFLAG=--debug
 endif
 
 TARGET=fuselage
@@ -34,21 +33,17 @@ $(STEPFILES): geometry.py
 $(MESHFILES): mesh.py $(STEPFILES)
 	python $<
 
-TARGTMP=$(TARGET).tmp
 $(TARGET).mess: $(TARGET).export $(TARGET).comm $(MESHFILES) 
-	cp $<  $(TARGTMP)
-	as_run $(CAFLAGS) $(TARGTMP) $(NOOUTPUT)
-	rm $(TARGTMP)
+	launchAster $(DBGFLAG) $(TARGET).comm $(TARGET).export $(NOOUTPUT)
 
-POURTMP=poursuite.tmp
 $(RESULTS): poursuite.export poursuite.comm $(TARGET).mess
-	cp $< $(POURTMP)
-	as_run $(CAFLAGS) $(POURTMP) $(NOOUTPUT)
-	rm $(POURTMP)
+	launchAster $(DBGFLAG) poursuite.comm poursuite.export $(NOOUTPUT)
 
+##########################################
+
+# Visualization
 visualization: visualization.py post $(TARGET).rmed
 	pvpython $<
-##########################################
 
 # Cleaning
 clean_init:
@@ -64,10 +59,10 @@ clean_solve:
 	rm -rf $(TARGET).mess $(TARGET).base
 
 clean_results:
-	rm -f $(RESULTS)
+	rm -f $(RESULTS) poursuite.mess
 
 clean_tmpFiles:
-	rm -f $(TARGTMP) $(POURTMP) *.mess
+	rm -f $(TARGET).comm.tmp $(TARGET).export.tmp
 
 clean: clean_init clean_geometry clean_mesh clean_solve \
 	   clean_results clean_tmpFiles 

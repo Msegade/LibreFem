@@ -1,11 +1,12 @@
 P actions make_etude
 P memory_limit 1024
-P mode interactif
 P mpi_nbcpu 1
 P mpi_nbnoeud 1
 P ncpus 1
 P time_limit 120
 P version 13.2
+P mode interactif
+P debug
 A args 
 A memjeveux 900
 A tpmax 600
