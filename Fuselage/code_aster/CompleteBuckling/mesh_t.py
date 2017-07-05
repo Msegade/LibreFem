@@ -154,8 +154,9 @@ FrameElements = Frame.CreateEmptyGroup( SMESH.FACE, 'FrameElements' )
 nbAdd = FrameElements.AddFrom( Frame.GetMesh() )
 
 FrameMeshes = [Frame]
-increment = (length-0.04) / nFrames
-for i in range(1, nFrames+1):
+if nFrames > 1:
+    increment = (length-0.04) / (nFrames-1)
+for i in range(1, nFrames):
     FrameMeshes.append(Frame.TranslateObjectMakeMesh( Frame, 
                 [ 0, 0, i*increment ], 1, 'Frame_translated' ))
 

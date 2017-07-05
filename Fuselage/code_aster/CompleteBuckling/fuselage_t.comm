@@ -132,6 +132,7 @@ clim=AFFE_CHAR_MECA( MODELE=modl,
                             ),
                     ),
                     ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0),
+                    LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
 );
 
 # Union of the three meshes
@@ -162,7 +163,7 @@ FX={{FX}}; FY={{FY}}; FZ={{FZ}};
 MX={{MX}}; MY={{MY}}; MZ={{MZ}};
 
 pload=AFFE_CHAR_MECA( MODELE=modl,
-                        LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
+                        #LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
                         FORCE_NODALE=_F(GROUP_NO='MNode',
                                         FX=FX, FY=FY, FZ=FZ,
                                         MX=MX, MY=MY, MZ=MZ

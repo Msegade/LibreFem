@@ -13,3 +13,4 @@ A tpmax 600
 F comm buckling.comm D  1
 R base fuselage.base DC 0
 F mess buckling.mess R  6
+F resu buckling.rmed R  80
