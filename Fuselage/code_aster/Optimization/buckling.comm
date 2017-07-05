@@ -1,0 +1,117 @@
+POURSUITE();
+
+sigvar = CREA_CHAMP (
+                      RESULTAT = res1,   
+                      TYPE_CHAM = 'ELGA_SIEF_R', 
+                      OPERATION = 'EXTR',
+                      NOM_CHAM = 'SIEF_ELGA',
+                      TYPE_MAXI = 'MINI',
+                      TYPE_RESU = 'VALE',
+                      INST=3.0
+                      )
+
+# Fixed Load stress field / time = 1.0
+#sigfix = CREA_CHAMP (
+#                      RESULTAT = res1,   
+#                      TYPE_CHAM = 'ELGA_SIEF_R', 
+#                      OPERATION = 'EXTR',
+#                      NOM_CHAM = 'SIEF_ELGA',
+#                      TYPE_MAXI = 'MINI',
+#                      TYPE_RESU = 'VALE',
+#                      INST=1.0
+#                      )
+
+
+# Elementary matrices 
+# ---------------------------
+
+matgv = CALC_MATR_ELEM (OPTION = 'RIGI_GEOM',
+                            MODELE = modl,
+                            CARA_ELEM = cara,
+                            SIEF_ELGA = sigvar,)
+
+#matgf = CALC_MATR_ELEM (OPTION = 'RIGI_GEOM',
+#                            MODELE = modl,
+#                            CARA_ELEM = cara,
+#                            SIEF_ELGA = sigfix,)
+
+# Both loads
+matm = CALC_MATR_ELEM (OPTION = 'RIGI_MECA',
+                          MODELE = modl,
+                          CHAM_MATER = chmat,
+                          CARA_ELEM = cara,
+                          CHARGE = (clim,
+                                    #tie,
+                                    #press, 
+                                    #pload,
+                          )
+)
+
+# Assembly
+# ---------
+
+nuddl = NUME_DDL (MATR_RIGI = matm,)
+masrigv = ASSE_MATRICE (MATR_ELEM = matgv,
+                         NUME_DDL = nuddl,)
+#masrigf = ASSE_MATRICE (MATR_ELEM = matgf,
+#                         NUME_DDL = nuddl,)
+masrim = ASSE_MATRICE (MATR_ELEM = matm,
+                         NUME_DDL = nuddl,)
+# Addition
+#mascomb = COMB_MATR_ASSE(
+#            COMB_R=(
+#                _F(MATR_ASSE=masrim, COEF_R=1.0),
+#                _F(MATR_ASSE=masrigf, COEF_R=1.0),
+#    ),
+#);    
+
+
+# Calculate the modes
+# -------------------
+
+mini=-1.2;
+maxi=-1.195;
+
+INFO_MODE( 
+    #MATR_RIGI=mascomb,
+    MATR_RIGI=masrim,
+    MATR_RIGI_GEOM=masrigv,
+    TYPE_MODE='MODE_FLAMB', 
+    CHAR_CRIT=(mini, maxi,),
+);
+
+
+modp1 = CALC_MODES (MATR_RIGI_GEOM = masrigv,
+                    OPTION = 'BANDE',
+                    #OPTION = 'CENTRE',
+	                STOP_BANDE_VIDE='OUI',
+                    #MATR_RIGI = mascomb,
+                    MATR_RIGI = masrim,
+                    #SOLVEUR_MODAL  = 
+                    #    _F( 
+                    #        METHODE='SORENSEN'
+                    #),
+                    TYPE_RESU = 'MODE_FLAMB',
+                    CALC_CHAR_CRIT = _F( 
+                            #NMAX_CHAR_CRIT = 6,
+                            CHAR_CRIT = (mini, maxi),
+                            #FREQ=0.1
+                    ),
+                    VERI_MODE=_F(
+                        STOP_ERREUR='NON',)
+)
+#
+## Normalize the modes 
+## ------------------
+#
+modp1 = NORM_MODE (reuse =modp1,    
+                   MODE = modp1,
+                   NORME = 'TRAN');
+
+# Result
+IMPR_RESU(FORMAT='MED',
+          UNITE = 80,
+          RESU=_F(RESULTAT=modp1,)
+    )
+
+FIN();

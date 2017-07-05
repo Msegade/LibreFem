@@ -1,0 +1,31 @@
+# Geometry
+Diameter 3.8
+length 6 
+nStringers  36
+nFrames  6
+
+# Mesh
+skinMeshSize 0.1 
+stringerMeshSize 0.1 
+frameMeshSize 0.07 
+
+# Model
+modelization 'DKT'
+E 73e6 
+nu 0.33
+rho 2.78
+SkinThickness 0.002 
+FrameThickness 0.002 
+StringerThickness 0.002 
+
+# Loads
+press 50
+FX 200
+FY -250
+FZ -300
+MX 500
+MY -500
+MZ -600
+
+
+

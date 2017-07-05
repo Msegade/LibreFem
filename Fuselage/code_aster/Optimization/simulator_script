@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Pre - Procesado
+
+dprepro "$1" parameters_t.in parameters.in
+
+# Analysis
+
+make post
+
+# Post - procesado
+
+#jq ".mass, .vmises" results.json  > "$2"
+numberOfConstraints=1
+numberOfVariables=3
+sed -n 2,$((numberOfVariables+1))p "$1" | awk '{print $2}' > variables.tmp
+grep  -A$((numberOfConstraints+1)) functions "$1" | awk '{print $1}' | 
+                tail -n +2 > printvector.tmp
+python output.py results.json variables.tmp printvector.tmp "$2"

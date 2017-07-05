@@ -1,0 +1,33 @@
+POURSUITE(PAR_LOT='NON');
+
+# Mass of the model
+mass=POST_ELEM(
+            RESULTAT =res1,
+            MODELE=modl,
+            MASS_INER=_F(TOUT='OUI'),
+            TITRE= 'Mass',
+);
+totalmass = mass.EXTR_TABLE().values()['MASSE'][0]
+
+# Maximum Von mises stresses
+vmises = POST_RELEVE_T(
+            ACTION=_F(
+                INTITULE='Maximun Vmises Stresses',
+                TOUT='OUI',
+                RESULTAT=res1,
+                NOM_CHAM='SIEQ_ELNO',
+                NOM_CMP='VMIS',
+                TOUT_ORDRE='OUI',
+                OPERATION='EXTREMA',),
+);
+maxvmises = max(vmises.EXTR_TABLE().values()['VALE'])
+
+import json
+results = {}
+results['mass'] = totalmass
+results['vmises'] = maxvmises
+s = json.dumps(results)
+with open('fort.31', 'w') as f:
+    f.write(s)
+
+FIN();

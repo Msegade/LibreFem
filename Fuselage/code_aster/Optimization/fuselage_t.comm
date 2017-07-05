@@ -1,0 +1,222 @@
+DEBUT(IGNORE_ALARM='MODELISA4_6');
+
+# Read mesh
+# ------------------
+
+skinmesh=LIRE_MAILLAGE( UNITE=20,
+                        FORMAT='MED' );
+
+stmesh=LIRE_MAILLAGE( UNITE=21,
+                        FORMAT='MED' );
+
+frmesh=LIRE_MAILLAGE( UNITE=22,
+                        FORMAT='MED' );
+
+
+
+# Assembly 
+# -------------------
+
+meshstif = ASSE_MAILLAGE( 
+                    MAILLAGE_1 = stmesh,
+                    MAILLAGE_2 = frmesh,
+                    OPERATION  = 'SUPERPOSE'
+);
+
+meshinit = ASSE_MAILLAGE( 
+                    MAILLAGE_1 = skinmesh,
+                    MAILLAGE_2 = meshstif,
+                    OPERATION  = 'SUPERPOSE'
+);
+
+
+# Reorient all normals so they are coherent
+# ----------------------------------------
+
+meshinit=MODI_MAILLAGE(reuse=meshinit,
+                      INFO=1,
+                      MAILLAGE=meshinit,
+                      ORIE_NORM_COQUE=_F(GROUP_MA=('SkinElements',),));
+
+# Add a 1D element in the master node
+# ------------------------------------
+
+mesh = CREA_MAILLAGE(MAILLAGE=meshinit,
+                     CREA_POI1=_F(NOM_GROUP_MA='MNode',
+                                  GROUP_NO='MNode',),);
+
+IMPR_RESU(FORMAT='MED',
+          UNITE = 70,
+          RESU=(
+                _F(MAILLAGE=mesh,),
+          ),
+);
+
+# DKT modelisation and DIS_TR for Mnode
+# ----------------------------------------
+
+modl=AFFE_MODELE( MAILLAGE=mesh,
+                 AFFE=(
+                 _F( 
+                        GROUP_MA = ('SkinElements','ForceEdges'),
+                        PHENOMENE = 'MECANIQUE',
+                        MODELISATION = {{modelization}}
+                  ),
+                 _F( 
+                        GROUP_MA = ('StringerElements',), 
+                        PHENOMENE = 'MECANIQUE',
+                        MODELISATION = {{modelization}}
+                  ),
+                 _F( 
+                        GROUP_MA = ('FrameElements'), 
+                        PHENOMENE = 'MECANIQUE',
+                        MODELISATION = {{modelization}}
+                  ),
+                 _F( 
+                        GROUP_MA = 'MNode',
+                        PHENOMENE = 'MECANIQUE',
+                        MODELISATION = 'DIS_TR'
+                  ),)
+);
+
+
+# Material definition
+# ----------------------
+
+al2024t4=DEFI_MATERIAU(ELAS=_F( E = {{E}},NU = {{nu}}, RHO = {{rho}} ));
+
+# Assignment of the material on the mesh
+# ---------------------------------------
+
+chmat=AFFE_MATERIAU(MAILLAGE=mesh, 
+                    AFFE=_F( GROUP_MA = ('SkinElements', 
+                                         'StringerElements',
+                                         'FrameElements'
+                            ),
+                            MATER = al2024t4)
+);
+
+# Section Assigment
+# -------------------------------------
+# Thickness to shell elements
+# 0 stifness and mass to MNode
+
+cara=AFFE_CARA_ELEM( MODELE=modl,
+                     COQUE=(
+                        _F( 
+                            GROUP_MA = ('SkinElements', ), 
+                            EPAIS={{SkinThickness}},
+                            VECTEUR=(1.0,1.0,1.0)
+                        ),
+                        _F( 
+                            GROUP_MA = ( 'StringerElements',), 
+                            EPAIS={{StringerThickness}},
+                            VECTEUR=(1.0,1.0,1.0)
+                        ),
+                        _F( 
+                            GROUP_MA = ( 'FrameElements'), 
+                            EPAIS={{FrameThickness}},
+                            VECTEUR=(1.0,1.0,1.0)
+                        ),
+                     ),
+                     DISCRET=(_F(CARA='M_TR_D_N',
+                                   GROUP_MA='MNode',
+                                   VALE=(0,0,0,0,0,0,0,0,0,0,),),
+                                _F(CARA='K_TR_D_N',
+                                   GROUP_MA='MNode',
+                                   VALE=(0,0,0,0,0,0,),),),
+);
+                                
+# Boundary conditions
+# -------------------------------------
+
+# Rotations and longitudinal displacement, and restrict tangential 
+# displacements to allow only radial
+clim=AFFE_CHAR_MECA( MODELE=modl,
+                    DDL_IMPO=(
+                   _F( 
+                            GROUP_NO = 'FixNodes', 
+                            DZ = 0., 
+                            DRX = 0.0, DRY = 0, DRZ = 0 
+                            ),
+                    ),
+                    ARETE_IMPO=_F(GROUP_MA='FixEdges', DTAN = 0.0),
+                    LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
+);
+
+# Union of the three meshes
+tie=AFFE_CHAR_MECA(MODELE=modl,
+                   LIAISON_MAIL=(
+                                _F(
+                                    GROUP_MA_MAIT='SkinElements',
+                                    GROUP_MA_ESCL=('StringerContactEdges',
+                                                   'FrameContactEdges'
+                                                  ),
+                                    TYPE_RACCORD='COQUE',
+                                    #DISTANCE_MAX=0.001,
+                                  )
+                    )
+);
+                                    
+
+
+
+# Loads definition
+# -------------------------
+
+press=AFFE_CHAR_MECA( MODELE=modl,
+          FORCE_COQUE=_F( GROUP_MA = ('PressureLoad'),  PRES={{press}}),);
+
+
+FX={{FX}}; FY={{FY}}; FZ={{FZ}};
+MX={{MX}}; MY={{MY}}; MZ={{MZ}};
+
+pload=AFFE_CHAR_MECA( MODELE=modl,
+                        #LIAISON_SOLIDE=_F(GROUP_NO = ('ForceNodes', 'MNode')),
+                        FORCE_NODALE=_F(GROUP_NO='MNode',
+                                        FX=FX, FY=FY, FZ=FZ,
+                                        MX=MX, MY=MY, MZ=MZ
+                        ),
+);
+
+# Load multipliers
+#  2 Pressure 
+#  3 Pressure + Point
+#  4 Point
+# -------------------------------------------
+press_m=DEFI_FONCTION(
+            NOM_PARA='INST',
+            VALE=(1,0.0, 2,1.0, 3,1.0, 4,0.0),
+            PROL_GAUCHE='CONSTANT',PROL_DROITE='CONSTANT',
+);
+
+pload_m=DEFI_FONCTION(
+            NOM_PARA='INST',
+            VALE=(2,0.0, 3,1.0, 4,1.0, 5,0.0),
+            PROL_GAUCHE='CONSTANT',PROL_DROITE='CONSTANT',
+);
+
+# Pseudo-time for the solution
+# ---------------------------------------
+
+liste=DEFI_LIST_REEL( DEBUT=1.0,
+                      INTERVALLE= _F( JUSQU_A=5,
+                                      PAS=1.0,),
+);
+
+# Resolution
+# ----------
+
+res1=MECA_STATIQUE( MODELE=modl,     
+                    CHAM_MATER=chmat,
+                    CARA_ELEM=cara, EXCIT=( 
+                                    _F( CHARGE = tie),
+                                    _F( CHARGE = clim),
+                                    _F( CHARGE = press, FONC_MULT=press_m),
+                                    _F( CHARGE = pload, FONC_MULT=pload_m),
+                    ),
+                    LIST_INST=liste,
+);
+
+
+FIN();
