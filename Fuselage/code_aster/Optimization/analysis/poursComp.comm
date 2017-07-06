@@ -1,4 +1,11 @@
-POURSUITE(PAR_LOT='NON');
+POURSUITE(PAR_LOT='NON',
+          IGNORE_ALARM='SUPERVIS_1');
+
+# Calculate the equivalent stresses field
+res1 = CALC_CHAMP(reuse=res1,
+                    RESULTAT=res1,
+                    CRITERES=('SIEQ_ELNO',),
+);
 
 # Mass of the model
 mass=POST_ELEM(

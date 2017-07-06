@@ -41,7 +41,7 @@ matm = CALC_MATR_ELEM (OPTION = 'RIGI_MECA',
                           CHAM_MATER = chmat,
                           CARA_ELEM = cara,
                           CHARGE = (clim,
-                                    tie,
+                                    #tie,
                                     press, 
                                     pload,
                           )
@@ -70,7 +70,7 @@ masrim = ASSE_MATRICE (MATR_ELEM = matm,
 # -------------------
 
 mini=-1.2;
-maxi=-0.8;
+maxi=-1.195;
 
 INFO_MODE( 
     #MATR_RIGI=mascomb,

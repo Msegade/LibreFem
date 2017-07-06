@@ -102,14 +102,23 @@ chmat=AFFE_MATERIAU(MAILLAGE=mesh,
 # 0 stifness and mass to MNode
 
 cara=AFFE_CARA_ELEM( MODELE=modl,
-                     COQUE=(_F( 
-                            GROUP_MA = ('SkinElements', 
-                                        'StringerElements',
-                                        'FrameElements'
-                            ), 
-                            EPAIS={{thickness}},
+                     COQUE=(
+                        _F( 
+                            GROUP_MA = ('SkinElements', ), 
+                            EPAIS={{SkinThickness}},
                             VECTEUR=(1.0,1.0,1.0)
-                     )),
+                        ),
+                        _F( 
+                            GROUP_MA = ( 'StringerElements',), 
+                            EPAIS={{StringerThickness}},
+                            VECTEUR=(1.0,1.0,1.0)
+                        ),
+                        _F( 
+                            GROUP_MA = ( 'FrameElements'), 
+                            EPAIS={{FrameThickness}},
+                            VECTEUR=(1.0,1.0,1.0)
+                        ),
+                     ),
                      DISCRET=(_F(CARA='M_TR_D_N',
                                    GROUP_MA='MNode',
                                    VALE=(0,0,0,0,0,0,0,0,0,0,),),

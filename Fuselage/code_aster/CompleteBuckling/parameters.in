@@ -14,7 +14,9 @@ modelization 'DKT'
 E 73e6 
 nu 0.33
 rho 2.78
-thickness 0.002 
+SkinThickness 0.002 
+FrameThickness 0.002 
+StringerThickness 0.002 
 
 # Loads
 press 50

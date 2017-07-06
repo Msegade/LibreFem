@@ -16,9 +16,9 @@ mesh: $(MESHFILES)
 solve: $(TARGET).mess
 buckling: buckling.mess
 post: $(RESULTS)
-all: visualization
+postComp: results.json
 
-# File intialization
+# File initialization
 geometry.py: $(PARAMS) geometry_t.py 
 	jprepro $^ $@
 mesh.py: $(PARAMS) mesh_t.py 
@@ -68,10 +68,14 @@ clean_buckling:
 	rm -rf buckling.mess buckling.base
 
 clean_results:
-	rm -f $(RESULTS) poursuite.mess results.json
+	rm -f $(RESULTS) poursuite.mess 
+
+clean_resultsComp:
+	rm -f results.json poursComp.mess
 
 clean_tmpFiles:
 	rm -f $(TARGET).comm.tmp $(TARGET).export.tmp
 
 clean: clean_init clean_geometry clean_mesh clean_solve \
-	   clean_buckling clean_results clean_tmpFiles 
+	   clean_buckling clean_results clean_resultsComp \
+	   clean_tmpFiles 
