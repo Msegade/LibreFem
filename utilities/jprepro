@@ -2,19 +2,17 @@
 
 import sys, os.path
 from jinja2 import Environment, FileSystemLoader
+import yaml
 
 paramFile=sys.argv[1]
 templateFile=sys.argv[2]
 resultFile=sys.argv[3]
 
-d = {}
-with open(paramFile) as f:
-    for line in f:
-        line = line.strip()
-        # Ignore comments and blank lines
-        if not line.startswith("#") and line:
-            (key, val) = line.split()
-            d[key] = val
+with open(paramFile, 'r') as stream:
+    try:
+        d = yaml.load(stream)
+    except yaml.YAMLError as exc:
+        print(exc)            
 
 env = Environment(loader=FileSystemLoader('./'))
 template = env.get_template(templateFile)
