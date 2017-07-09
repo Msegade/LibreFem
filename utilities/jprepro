@@ -1,37 +1,24 @@
 #!/bin/python2
 
-import sys
-import os.path
-import yaml
-import re
+import sys, os.path
 from jinja2 import Environment, FileSystemLoader
-
-loader = yaml.SafeLoader
-loader.add_implicit_resolver(
-    u'tag:yaml.org,2002:float',
-    re.compile(u'''^(?:
-     [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
-    |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
-    |\\.[0-9_]+(?:[eE][-+][0-9]+)?
-    |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
-    |[-+]?\\.(?:inf|Inf|INF)
-    |\\.(?:nan|NaN|NAN))$''', re.X),
-    list(u'-+0123456789.'))
 
 paramFile=sys.argv[1]
 templateFile=sys.argv[2]
 resultFile=sys.argv[3]
 
-with open(paramFile, 'r') as stream:
-    try:
-        d = yaml.load(stream, Loader=loader)
-    except yaml.YAMLError as exc:
-        print(exc)            
-
-for key in d:
-    if type(d[key]) == str:
-        d[key]="'%s'" % d[key]
-
+d = {}
+with open(paramFile) as f:
+    for line in f:
+        line = line.strip()
+        # Ignore comments and blank lines
+        if not line.startswith("#") and line:
+            #(key, val) = line.split()
+            linelist = line.split()
+            print linelist
+            key = linelist[0]
+            val = ' '.join(linelist[1:])
+            d[key] = val
 
 env = Environment(loader=FileSystemLoader('./'))
 template = env.get_template(templateFile)
@@ -48,3 +35,4 @@ if (truncate or not exists):
     # Second open to overwrite as new file ('w')
     with open(resultFile, 'w') as f:
         f.write(render)
+
