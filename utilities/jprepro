@@ -15,7 +15,6 @@ with open(paramFile) as f:
         if not line.startswith("#") and line:
             #(key, val) = line.split()
             linelist = line.split()
-            print linelist
             key = linelist[0]
             val = ' '.join(linelist[1:])
             d[key] = val

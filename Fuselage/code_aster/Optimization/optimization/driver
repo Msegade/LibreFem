@@ -1,0 +1,24 @@
+#!/bin/bash
+
+ANALYSIS_DIR=../analysis
+
+# Pre - Procesado
+
+dprepro "$1" parameters_t.in $ANALYSIS_DIR/parameters.in
+
+# Analysis
+
+pushd $ANALYSIS_DIR
+make postComp
+popd
+mv $ANALYSIS_DIR/results.json .
+
+# Post - procesado
+numberOfConstraints=1
+numberOfVariables=3
+sed -n 2,$((numberOfVariables+1))p "$1" | awk '{print $1}' > variables.tmp
+grep  -A$((numberOfConstraints+1)) functions "$1" | awk '{print $1}' | 
+                tail -n +2 > printvector.tmp
+
+#mv $ANALYSIS_DIR/{results.json,variables.tmp,printvector.tmp} .
+python output.py results.json variables.tmp printvector.tmp "$2"

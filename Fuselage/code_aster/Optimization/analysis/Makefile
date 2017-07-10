@@ -29,10 +29,10 @@ $(TARGET).comm: $(PARAMS) $(TARGET)_t.comm
 #  Analysis pipeline
 ##########################################
 $(STEPFILES): geometry.py
-	python $<
+	salome shell -- python $<
 
 $(MESHFILES): mesh.py $(STEPFILES)
-	python $<
+	salome shell -- python $<
 
 $(TARGET).mess: $(TARGET).export $(TARGET).comm $(MESHFILES) 
 	launchAster $(DBGFLAG) $(TARGET).comm $(TARGET).export $(NOOUTPUT)

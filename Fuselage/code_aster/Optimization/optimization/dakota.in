@@ -1,13 +1,13 @@
 environment
-  graphics
+  #graphics
   tabular_data
     tabular_data_file = 'optimization.dat'
 
 method
   #optpp_fd_newton
   #conmin_frcg
-  #optpp_q_newton
-  dot_sqp
+  optpp_q_newton
+  #dot_sqp
   max_iterations = 100
   convergence_tolerance = 1e-8
  

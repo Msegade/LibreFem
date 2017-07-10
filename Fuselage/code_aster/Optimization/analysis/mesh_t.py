@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-###
-### This file is generated automatically by SALOME v7.8.0 with dump python functionality
-###
-
 #############Print results in current working directory###########
 import os
 currentpath=os.path.join(os.getcwd(), '')
