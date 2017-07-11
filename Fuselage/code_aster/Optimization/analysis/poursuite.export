@@ -11,7 +11,8 @@ A memjeveux 900
 A tpmax 600
 
 F comm poursuite.comm D  1
-R base fuselage.base DC 0
+R base analysis.base DC 0
 F mess poursuite.mess R  6
-F resu fuselage.resu R  8
-F rmed fuselage.rmed R  80
+F resu static.resu R  8
+F rmed static.rmed R  80
+F rmed buckling.rmed R  81

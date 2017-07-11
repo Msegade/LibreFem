@@ -1,7 +1,7 @@
 # Geometry
 Diameter 3.8
 length 6 
-nStringers  6
+nStringers  3
 nFrames  6
 
 # Mesh
@@ -14,9 +14,9 @@ modelization 'DKT'
 E 73e6 
 nu 0.33
 rho 2.78
-SkinThickness 2.988915754791130e-03
-FrameThickness 3.081462230078671e-03
-StringerThickness 1.809740167281908e-03
+SkinThickness 2e-3
+FrameThickness 2e-3
+StringerThickness 2e-3
 
 # Loads
 press 50

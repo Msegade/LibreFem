@@ -10,8 +10,8 @@ A args
 A memjeveux 900
 A tpmax 600
 
-F comm buckling.comm D  1
+F comm pourStatic.comm D  1
 R base static.base DC 0
-R base buckling.base RC 0
-F mess buckling.mess R  6
-F resu buckling.rmed R  80
+F mess pourStatic.mess R  6
+F resu static.resu R  8
+F rmed static.rmed R  80

@@ -107,18 +107,5 @@ IMPR_RESU(FORMAT='MED',
             )
 );
 
-# Buckling
-# ----------------------------
-
-IMPR_RESU(FORMAT='MED',
-          UNITE = 81,
-          RESU=(
-                _F(RESULTAT=modp1, 
-		   NOM_CHAM=('DEPL', )
-		   )
-	)
-)
-
-
 
 FIN();

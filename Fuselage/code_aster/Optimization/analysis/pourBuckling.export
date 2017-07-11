@@ -10,7 +10,7 @@ A args
 A memjeveux 900
 A tpmax 600
 
-F comm poursComp.comm D  1
-R base fuselage.base DC 0
-F mess poursComp.mess R  6
-F libr results.json R  31
+F comm pourBuckling.comm D  1
+R base buckling.base DC 0
+F mess pourBuckling.mess R  6
+F rmed buckling.rmed R  80

@@ -8,7 +8,7 @@ sigvar = CREA_CHAMP (
                       NOM_CHAM = 'SIEF_ELGA',
                       TYPE_MAXI = 'MINI',
                       TYPE_RESU = 'VALE',
-                      INST=4.0
+                      INST=3.0
                       )
 
 # Fixed Load stress field / time = 2.0
@@ -72,10 +72,10 @@ mascomb = COMB_MATR_ASSE(
 # Calculate the modes
 # -------------------
 
-mini=-1.2;
-maxi=-0.8;
+mini=-1.0;
+maxi=-0.99;
 
-INFO_MODE( 
+sttbl = INFO_MODE( 
     MATR_RIGI=mascomb,
     #MATR_RIGI=masrim,
     MATR_RIGI_GEOM=masrigv,
@@ -96,9 +96,8 @@ modp1 = CALC_MODES (MATR_RIGI_GEOM = masrigv,
                     #),
                     TYPE_RESU = 'MODE_FLAMB',
                     CALC_CHAR_CRIT = _F( 
-                            #NMAX_CHAR_CRIT = 6,
+                            TABLE_CHAR_CRIT=sttbl,
                             CHAR_CRIT = (mini, maxi),
-                            #FREQ=0.1
                     ),
                     VERI_MODE=_F(
                         STOP_ERREUR='NON',)
@@ -111,10 +110,5 @@ modp1 = NORM_MODE (reuse =modp1,
                    MODE = modp1,
                    NORME = 'TRAN');
 
-# Result
-IMPR_RESU(FORMAT='MED',
-          UNITE = 80,
-          RESU=_F(RESULTAT=modp1,)
-    )
 
 FIN();

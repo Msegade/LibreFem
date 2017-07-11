@@ -4,16 +4,16 @@ ifeq ($(DEBUG),True)
 	DBGFLAG=--debug
 endif
 
-TARGET=fuselage
-MESHFILES=Skin.med  Stringers.med Frames.med
-STEPFILES=Skin.step Frame.step Stringer.step
-RESULTS=$(TARGET).resu $(TARGET).rmed 
+GEOMFILES=Skin.step Frame.step Stringer.step
+MESHFILES=Skin.med Stringers.med Frames.med
+RESULTS=static.resu static.rmed buckling.resu buckling.rmed
 PARAMS=parameters.in
 
-init: geometry.py mesh.py $(TARGET).comm
-geometry: $(STEPFILES)
+init: geometry.py mesh.py pre.comm analysis.comm
+geometry: $(GEOMFILES)
 mesh: $(MESHFILES)
-solve: $(TARGET).mess
+pre: pre.mess
+static: static.mess
 buckling: buckling.mess
 post: $(RESULTS)
 postComp: results.json
@@ -23,59 +23,87 @@ geometry.py: $(PARAMS) geometry_t.py
 	jprepro $^ $@
 mesh.py: $(PARAMS) mesh_t.py 
 	jprepro $^ $@
-$(TARGET).comm: $(PARAMS) $(TARGET)_t.comm 
+pre.comm: $(PARAMS) pre_t.comm 
 	jprepro $^ $@
+analysis.comm: pre.comm static.comm buckling.comm 
+	catAster pre.comm static.comm buckling.comm > analysis.comm
 
+##########################################
 #  Analysis pipeline
 ##########################################
-$(STEPFILES): geometry.py
+$(GEOMFILES): geometry.py
 	salome shell -- python $<
 
-$(MESHFILES): mesh.py $(STEPFILES)
+$(MESHFILES): mesh.py  $(GEOMFILES)
 	salome shell -- python $<
 
-$(TARGET).mess: $(TARGET).export $(TARGET).comm $(MESHFILES) 
-	launchAster $(DBGFLAG) $(TARGET).comm $(TARGET).export $(NOOUTPUT)
+####################################################
+# Step by step resolution
+####################################################
 
-buckling.mess: buckling.export buckling.comm $(TARGET).mess
-	launchAster $(DBGFLAG) buckling.comm buckling.export $(NOOUTPUT)
+pre.mess: pre.export pre.comm $(MESHFILES)
+	launchAster pre.comm pre.export 
 
-$(RESULTS): poursuite.export poursuite.comm $(TARGET).mess
-	launchAster $(DBGFLAG) poursuite.comm poursuite.export $(NOOUTPUT)
+static.mess: static.export static.comm pre.mess
+	launchAster static.comm static.export 
 
-results.json: poursComp.export poursComp.comm $(TARGET).mess
-	launchAster $(DBGFLAG) poursComp.comm poursComp.export $(NOOUTPUT)
-##########################################
+static.resu static.rmed: pourStatic.export pourStatic.comm static.mess
+	launchAster pourStatic.comm pourStatic.export 
+
+buckling.mess: buckling.export buckling.comm static.mess
+	launchAster buckling.comm buckling.export 
+
+buckling.resu buckling.rmed: pourBuckling.export pourBuckling.comm buckling.mess
+	launchAster pourBuckling.comm pourBuckling.export 
+
+####################################################
+# Complete in One file
+####################################################
+
+analysis.mess: analysis.export analysis.comm $(MESHFILES)
+	launchAster analysis.comm analysis.export 
+
+results.json: pourComp.export pourComp.comm analysis.mess
+	launchAster pourComp.comm pourComp.export
+####################################################
 
 # Visualization
-visualization: visualization.py post $(TARGET).rmed
+visualization: visualization.py post static.rmed buckling.rmed
 	pvpython $<
 
 # Cleaning
 clean_init:
-	rm -f geometry.py mesh.py $(TARGET).comm
+	rm -f geometry.py mesh.py pre.comm analysis.comm
 
 clean_geometry:
-	rm -f $(STEPFILES)
+	rm -f $(GEOMFILES)
 
 clean_mesh:
-	rm -f $(MESHFILES) Complete.med
+	rm -f $(MESHFILES) 
 
-clean_solve:
-	rm -rf $(TARGET).mess $(TARGET).base
+clean_pre:
+	rm -rf pre.mess pre.base
+
+clean_static:
+	rm -rf static.mess static.base
 
 clean_buckling:
 	rm -rf buckling.mess buckling.base
 
 clean_results:
-	rm -f $(RESULTS) poursuite.mess 
+	rm -f $(RESULTS) pourStatic.mess pourBuckling.mess
+
+clean_analysis:
+	rm -rf analysis.mess analysis.base
 
 clean_resultsComp:
-	rm -f results.json poursComp.mess
+	rm -f results.json pourComp.mess
 
 clean_tmpFiles:
-	rm -f $(TARGET).comm.tmp $(TARGET).export.tmp
+	rm -f *.tmp
 
-clean: clean_init clean_geometry clean_mesh clean_solve \
-	   clean_buckling clean_results clean_resultsComp \
+clean: clean_init clean_geometry clean_mesh  clean_pre \
+	   clean_static  clean_buckling \
+	   clean_analysis \
+	   clean_results clean_resultsComp \
 	   clean_tmpFiles 
